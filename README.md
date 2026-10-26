@@ -5,6 +5,9 @@
 
 零依赖、零构建：直接双击 `index.html` 即可运行，所有数据存在浏览器本地。
 
+> 本仓库为 [harmonyWardrobe](https://github.com/whyzsm/harmonyWardrobe)（鸿蒙原生端）的网页版移植。
+> 两端数据模型一致，但**备份文件格式不互通**（鸿蒙端为 `RdbStore.backup` 二进制快照，本端为 JSON）。
+
 ---
 
 ## 快速开始
