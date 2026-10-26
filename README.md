@@ -75,7 +75,7 @@ harmonyWardrobe_web/
 │   │   └── *.js              13 个页面模块
 │   └── main.js            启动入口
 ├── assets/                默认封面图
-└── tests/                 无头浏览器测试（109 项断言）
+└── tests/                 无头浏览器测试（112 项断言）
 ```
 
 ---
@@ -147,12 +147,12 @@ node tests/screenshots.js      # 生成 12 张页面截图 → .screenshots/
 
 | 套件 | 断言数 | 覆盖内容 |
 |---|---|---|
-| `smoke.test.js` | 74 | 页面渲染、路由切换、仓储增删改查、搜索索引、照片引用计数、备份导出、刷新持久化 |
+| `smoke.test.js` | 77 | 页面渲染、路由切换、仓储增删改查、搜索索引、照片引用计数、备份导出、刷新持久化 |
 | `file-protocol.test.js` | 12 | `file://` 下脚本加载、CSS/图片资源、IndexedDB 可用性与跨会话持久化 |
 | `masonry.test.js` | 11 | 瀑布流最矮列分配与 ArkUI 策略一致性、筛选重排、空态切换 |
 | `layout.test.js` | 12 | 画布高度固定、列表独立滚动、底部导航与保存条固定可见 |
 
-当前状态：**109 项断言全部通过**。
+当前状态：**112 项断言全部通过**。
 
 ---
 
@@ -161,8 +161,15 @@ node tests/screenshots.js      # 生成 12 张页面截图 → .screenshots/
 1. **照片上限统一为 5 张**。鸿蒙端心愿编辑页硬编码 6 张且不截断，此处按全局常量 `MAX_USER_PHOTOS = 5` 统一。
 2. **心愿编辑页错误提示统一走 `userFacingError`**。鸿蒙端该页直接抛 `error.message`，与其余页面不一致。
 3. **长按删除在桌面端可用右键触发**，同时保留 500ms 长按。
-4. **`ProfilePage` 保留心愿清单入口**。鸿蒙端 `WishlistSection()` 已定义但未被 `build()` 调用，Web 版挂载了该入口。
-5. **搜索排序**在鸿蒙端 n-gram 降级模式下按标题升序，Web 版按命中词元数降序（更符合直觉），AND 语义一致。
+4. **搜索排序**在鸿蒙端 n-gram 降级模式下按标题升序，Web 版按命中词元数降序（更符合直觉），AND 语义一致。
+
+### 与鸿蒙端保持一致的心愿清单入口行为
+
+鸿蒙端 `ProfilePage.ets` 定义了 `WishlistSection()`，但 `build()` 并未调用它，因此「我的」页**实际不展示**心愿清单区块（真实截图亦证实：偏好区块之后直接是「预算提醒」）。Web 版已对齐该行为：
+
+- `renderWishlistSection()` 的实现**保留在 `scripts/pages/profile.js` 中**，但不在 `render()` 里挂载；
+- 心愿清单的可达路径与鸿蒙端一致 —— **经统一搜索结果进入**。搜索结果点击心愿 → 清单页消费 `wishlistItemId` → 自动展开该条编辑器（对应鸿蒙端 `initialWishlistItemId` + `showEditor = true`）。
+
 
 ---
 

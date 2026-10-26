@@ -769,8 +769,10 @@
 
     /**
      * 我的清单 / 心愿清单入口
-     * 鸿蒙端 ProfilePage.ets 定义了 WishlistSection() 但未在 build() 中调用，
-     * 导致心愿清单页没有入口；Web 版按原设计补上该入口。
+     *
+     * 对齐鸿蒙端 ProfilePage.ets：那里定义了 WishlistSection()，但 build() 并未调用它，
+     * 因此「我的」页实际不展示该区块。此处保留函数实现（便于日后启用），
+     * 但同样不在 render() 中挂载，保持与鸿蒙端一致。
      */
     function renderWishlistSection() {
       return el('div', { class: 'stack', style: { gap: '10px' } }, [
@@ -890,7 +892,7 @@
       contentHost.appendChild(renderHero());
       contentHost.appendChild(renderStats());
       contentHost.appendChild(renderPreferenceSection());
-      contentHost.appendChild(renderWishlistSection());
+      /* renderWishlistSection() 保留但不挂载：与鸿蒙端 build() 未调用 WishlistSection() 一致 */
 
       if (state.errorMessage) {
         contentHost.appendChild(

@@ -19,7 +19,10 @@
       items: [],
       searchQuery: '',
       loading: true,
-      errorMessage: ''
+      errorMessage: '',
+      /* 对应鸿蒙端 WishlistPage.initialWishlistItemId：
+         由搜索结果进入时携带的待打开条目 id，列表加载后自动展开该条编辑器。 */
+      initialItemId: route.params.wishlistItemId || ''
     };
 
     var root = el('div', { class: 'page' });
@@ -227,12 +230,41 @@
           state.items = items;
           state.loading = false;
           renderList();
+          openInitialItem();
         })
         .catch(function (error) {
           state.loading = false;
           state.errorMessage = error && error.message ? error.message : '加载心愿失败';
           renderList();
         });
+    }
+
+    /**
+     * 消费 initialWishlistItemId：自动展开该条心愿的编辑器。
+     * 对应鸿蒙端 WishlistPage.loadWishlistItems() 中
+     * 「找到匹配条目 → selectedWishlistItemId + showEditor = true」的逻辑。
+     * Web 版编辑器是独立路由，故此处以跳转等价实现。
+     */
+    function openInitialItem() {
+      if (!state.initialItemId) {
+        return;
+      }
+
+      var targetId = state.initialItemId;
+      /* 先清空，避免编辑器返回清单页时再次触发 */
+      state.initialItemId = '';
+      HW.App.consumeParam('wishlistItemId');
+
+      var matched = state.items.some(function (item) {
+        return item.id === targetId;
+      });
+      if (!matched) {
+        return;
+      }
+
+      HW.App.navigate(HW.App.RouteKind.WishlistEditor, models.AppMainTab.Profile, {
+        wishlistItemId: targetId
+      });
     }
 
     contentHost.appendChild(renderHeader());

@@ -109,6 +109,18 @@
       }
     },
 
+    /**
+     * 消费（清空）当前路由上的某个参数。
+     * 对应鸿蒙端 Index.consumeWishlistRoute()：条目 id 被目标页读走后要清掉，
+     * 否则返回该路由时会重复触发。
+     */
+    consumeParam: function (key) {
+      var current = App.current();
+      if (current && current.params && typeof current.params[key] === 'string') {
+        current.params[key] = '';
+      }
+    },
+
     /** 切换主 Tab（重置为该 Tab 的根页面） */
     switchTab: function (mainTab) {
       App.stack = [
@@ -275,7 +287,9 @@
           });
           break;
         case models.SearchEntityType.Wishlist:
-          App.navigate(RouteKind.WishlistEditor, models.AppMainTab.Profile, {
+          /* 对应鸿蒙端 Index.openWishlistPage(id)：
+             进入心愿清单页并带上待打开的条目，由清单页消费后展开编辑器。 */
+          App.navigate(RouteKind.Wishlist, models.AppMainTab.Profile, {
             wishlistItemId: id
           });
           break;

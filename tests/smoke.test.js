@@ -304,24 +304,55 @@ async function main() {
     log('心愿清单页渲染条目', wishlist.cards > 0 && wishlist.text.includes('羊毛大衣'), `cards=${wishlist.cards}`);
     log('心愿条目显示门店与价格', wishlist.text.includes('优衣库') && wishlist.text.includes('¥799.00'), '');
 
-    /* ---- 我的 Tab → 心愿清单入口（鸿蒙端缺失，Web 版补上） ---- */
+    /* ---- 我的 Tab → 心愿清单入口（与鸿蒙端一致：不存在该入口） ---- */
     await cdp.eval(`HW.App.switchTab('profile')`);
     await cdp.waitFor(`!!document.querySelector('.profile-hero')`, 8000);
     const wishlistEntry = await cdp.eval(`(() => {
       const rows = Array.from(document.querySelectorAll('.preference-row'));
       const row = rows.find(r => r.innerText.includes('心愿清单'));
-      const btn = row ? Array.from(row.querySelectorAll('button')).find(b => b.textContent.trim() === '查看') : null;
-      return { hasSection: document.body.innerText.includes('我的清单'), hasRow: !!row, hasButton: !!btn };
+      return {
+        hasSection: document.body.innerText.includes('我的清单'),
+        hasRow: !!row,
+        hasButton: !!row && !!Array.from(row.querySelectorAll('button')).find(b => b.textContent.trim() === '查看')
+      };
     })()`);
-    log('我的页含「我的清单 / 心愿清单」入口', wishlistEntry.hasSection && wishlistEntry.hasRow && wishlistEntry.hasButton, JSON.stringify(wishlistEntry));
+    log('我的页不含「我的清单 / 心愿清单」入口（对齐鸿蒙端）',
+      !wishlistEntry.hasSection && !wishlistEntry.hasRow && !wishlistEntry.hasButton,
+      JSON.stringify(wishlistEntry));
 
-    await cdp.eval(`(() => {
-      const rows = Array.from(document.querySelectorAll('.preference-row'));
-      const row = rows.find(r => r.innerText.includes('心愿清单'));
-      Array.from(row.querySelectorAll('button')).find(b => b.textContent.trim() === '查看').click();
+    /* ---- 搜索结果进入心愿清单（鸿蒙端唯一可达路径）---- */
+    await cdp.eval(`HW.App.navigate(HW.App.RouteKind.Search, 'wardrobe', { query: '羊毛' })`);
+    const searchWish = await cdp.waitFor(`document.querySelectorAll('.result-card').length > 0`, 8000);
+    const wishResult = await cdp.eval(`(() => {
+      const cards = Array.from(document.querySelectorAll('.result-card'));
+      const hit = cards.find(c => c.innerText.includes('心愿'));
+      if (hit) { hit.click(); return { found: true }; }
+      return { found: false, titles: cards.map(c => c.innerText.replace(/\\n/g, '|')) };
     })()`);
-    const wishlistNavOk = await cdp.waitFor(`document.body.innerText.includes('心仪单品')`, 8000);
-    log('点击「查看」进入心愿清单页', !!wishlistNavOk);
+    log('搜索结果含心愿条目', searchWish && wishResult.found, JSON.stringify(wishResult).slice(0, 200));
+
+    const wishEditorOpened = await cdp.waitFor(`document.body.innerText.includes('编辑心愿')`, 8000);
+    log('点击搜索结果进入心愿编辑器', !!wishEditorOpened);
+    /* 条目标题落在 <input> 里，innerText 读不到，需读 input.value */
+    const editorFields = await cdp.eval(`(() => ({
+      values: Array.from(document.querySelectorAll('input')).map(i => i.value)
+    }))()`);
+    log('心愿编辑器载入目标条目',
+      editorFields.values.includes('羊毛大衣') && editorFields.values.includes('优衣库'),
+      JSON.stringify(editorFields.values));
+
+    /* 返回后不应再次自动打开编辑器（initialWishlistItemId 需被消费） */
+    await cdp.eval(`HW.App.back()`);
+    const backToList = await cdp.waitFor(`document.body.innerText.includes('心仪单品')`, 8000);
+    await new Promise(r => setTimeout(r, 800));
+    const afterBack = await cdp.eval(`(() => ({
+      isEditor: document.body.innerText.includes('编辑心愿'),
+      stack: HW.App.stack.map(r => r.kind)
+    }))()`);
+    log('心愿编辑器返回清单页且不重复展开编辑器',
+      !!backToList && !afterBack.isEditor && afterBack.stack[afterBack.stack.length - 1] === 'wishlist',
+      JSON.stringify(afterBack));
+
     await cdp.eval(`HW.App.switchTab('profile')`);
     await cdp.waitFor(`!!document.querySelector('.profile-hero')`, 8000);
 
