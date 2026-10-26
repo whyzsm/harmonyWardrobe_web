@@ -4,6 +4,9 @@
 # 测试截图输出（由 node tests/screenshots.js 重新生成）
 .screenshots/
 
+# 参赛活动准备材料（临时文档，不入库）
+.sponsor/
+
 # AI 工具与本地数据
 .workbuddy/
 .codex/
