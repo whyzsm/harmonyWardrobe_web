@@ -168,7 +168,9 @@
 
   /* ---------- 底部弹层 ---------- */
   /**
-   * @param {{title?:string, render:(close:Function)=>Node, onClose?:Function}} options
+   * @param {{title?:string, subtitle?:string, flat?:boolean, render:(close:Function)=>Node, onClose?:Function}} options
+   *   flat=true  → 快捷录入样式：44 高标题行 + 右侧「取消」
+   *   flat=false → Profile 样式：标题 + 副标题 + 右侧「取消」，内容在卡片里
    */
   function showSheet(options) {
     var opts = options || {};
@@ -183,16 +185,30 @@
       }
     }
 
-    var sheet = el('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' });
-    var header = el('div', { class: 'sheet__header' }, [
-      el('div', { class: 'sheet__title', text: opts.title || '' }),
+    var sheet = el('div', {
+      class: 'sheet' + (opts.flat ? '' : ' sheet--profile'),
+      role: 'dialog',
+      'aria-modal': 'true'
+    });
+
+    var headerChildren = [
+      el('div', { class: 'grow' }, [
+        el('div', { class: 'sheet__title', text: opts.title || '' }),
+        opts.subtitle
+          ? el('div', { class: 'sheet__subtitle', text: opts.subtitle })
+          : null
+      ]),
       el('button', {
-        class: 'sheet__cancel',
+        class: 'sheet__cancel' + (opts.flat ? ' sheet__cancel--flat' : ''),
         type: 'button',
         text: '取消',
         onclick: close
       })
-    ]);
+    ];
+
+    var header = el('div', {
+      class: 'sheet__header' + (opts.flat ? ' sheet__header--flat' : '')
+    }, headerChildren);
     sheet.appendChild(header);
 
     var body = el('div', { class: 'sheet__body' });

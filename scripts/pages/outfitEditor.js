@@ -1,5 +1,6 @@
 /* 衣不缺 Web 版 — 创建/编辑穿搭 / OutfitEditPage
-   对应鸿蒙端 entry/src/main/ets/pages/OutfitEditPage.ets。 */
+   对应鸿蒙端 entry/src/main/ets/pages/OutfitEditPage.ets。
+   滚动内容：padding {left:20, right:20, top:20, bottom:16/112}，Column space 16。 */
 (function (global) {
   'use strict';
 
@@ -23,7 +24,6 @@
       categories: [],
       categoryDraft: '',
       showCustomCategoryInput: false,
-      categoryError: '',
       selectedPhotoIndex: 0,
       isSaving: false,
       isChoosingPhotos: false,
@@ -34,13 +34,19 @@
     var root = el('div', { class: 'page' });
     var headerHost = el('div');
     var scrollHost = el('div', { class: 'page__body scroll-y' });
-    var contentHost = el('div', { class: 'stack', style: { padding: '16px 20px 112px' } });
-    var actionHost = el('div', { class: 'action-bar' });
+    var contentHost = el('div', {
+      class: 'stack',
+      style: { padding: '20px 20px 112px', gap: '16px' }
+    });
+    var actionHost = el('div', { class: 'action-bar action-bar--sheet' });
 
     /* ---------- 派生值 ---------- */
     function linkedClothingPhotoUris() {
       var uris = [];
       (state.clothingItemIds || []).forEach(function (clothingId) {
+        if (uris.length > 0) {
+          return;
+        }
         var item = state.clothingItems.filter(function (candidate) {
           return candidate.id === clothingId;
         })[0];
@@ -130,16 +136,6 @@
       renderContent();
     }
 
-    function toggleCategory(categoryName) {
-      var index = state.selectedCategoryNames.indexOf(categoryName);
-      if (index >= 0) {
-        state.selectedCategoryNames.splice(index, 1);
-      } else {
-        state.selectedCategoryNames.push(categoryName);
-      }
-      renderContent();
-    }
-
     /* ---------- 照片 ---------- */
     function pickGalleryPhotos() {
       if (state.isSaving || state.isChoosingPhotos) {
@@ -158,11 +154,9 @@
       HW.PhotoPickerAdapter.pickFromGallery(slots)
         .then(function (photoUris) {
           state.isChoosingPhotos = false;
-          if (!photoUris.length) {
-            renderAction();
-            return;
+          if (photoUris.length) {
+            state.photoUris = HW.utils.appendPhotoUris(state.photoUris, photoUris);
           }
-          state.photoUris = HW.utils.appendPhotoUris(state.photoUris, photoUris);
           renderContent();
           renderAction();
         })
@@ -221,9 +215,7 @@
     function confirmDeleteCategory(category) {
       var message =
         category.usageCount > 0
-          ? '该分类下有 ' +
-            category.usageCount +
-            ' 套穿搭，删除后会移除这些穿搭与该分类的关联。'
+          ? '该分类下有 ' + category.usageCount + ' 套穿搭，删除后会移除这些穿搭与该分类的关联。'
           : '确定删除“' + category.name + '”分类吗？';
 
       ui.showConfirm({
@@ -261,10 +253,7 @@
           .catch(function (error) {
             state.deletingCategoryId = '';
             renderContent();
-            ctx.showToast(
-              HW.utils.userFacingError(error, '删除分类失败'),
-              true
-            );
+            ctx.showToast(HW.utils.userFacingError(error, '删除分类失败'), true);
           });
       });
     }
@@ -307,23 +296,15 @@
         });
     }
 
-    /* ---------- 渲染：展示来源 ---------- */
+    /* ---------- 渲染：展示来源分段控件 ---------- */
     function renderDisplaySourceSelector() {
-      function tab(options) {
+      function seg(options) {
         var isActive = state.displaySource === options.value;
         return el(
           'button',
           {
-            class: 'chip chip--wide',
+            class: 'seg' + (isActive ? ' seg--active' : ''),
             type: 'button',
-            style: {
-              height: '52px',
-              flexDirection: 'column',
-              gap: '2px',
-              background: isActive ? 'var(--action-black)' : 'var(--card-soft-gray)',
-              borderColor: isActive ? 'var(--action-black)' : 'var(--border-medium)',
-              color: isActive ? 'var(--text-inverse)' : 'var(--text-primary)'
-            },
             'aria-label': options.label + (isActive ? '，已选中' : ''),
             onclick: function () {
               state.displaySource = options.value;
@@ -332,30 +313,21 @@
             }
           },
           [
-            el('span', { text: options.label }),
-            el('span', {
-              style: {
-                fontSize: '11px',
-                color: isActive ? 'var(--glass-medium)' : 'var(--text-secondary)'
-              },
-              text: options.description
-            })
+            el('span', { class: 'seg__title', text: options.label }),
+            el('span', { class: 'seg__desc', text: options.description })
           ]
         );
       }
 
-      return el('div', { class: 'card flat', style: { padding: '12px' } }, [
-        el('div', {
-          style: { fontSize: '16px', marginBottom: '10px' },
-          text: '展示内容'
-        }),
-        el('div', { class: 'row', style: { gap: '12px' } }, [
-          tab({
+      return el('div', { class: 'seg-card' }, [
+        el('div', { class: 'seg-card__title', text: '展示内容' }),
+        el('div', { class: 'seg-row' }, [
+          seg({
             label: '上传照片',
             description: '展示穿搭实拍图',
             value: models.OutfitDisplaySource.Photo
           }),
-          tab({
+          seg({
             label: '选衣柜单品',
             description: '展示衣柜单品图',
             value: models.OutfitDisplaySource.Wardrobe
@@ -364,9 +336,9 @@
       ]);
     }
 
-    /* ---------- 渲染：照片选择器 ---------- */
+    /* ---------- 渲染：照片选择器（scrim + 叠加文字始终存在） ---------- */
     function renderPhotoSelector(title, description) {
-      var hero = el('div', { class: 'photo-hero' });
+      var hero = el('div', { class: 'photo-hero photo-hero--sheet' });
 
       if (state.photoUris.length > 0) {
         hero.appendChild(
@@ -390,6 +362,26 @@
 
       hero.appendChild(el('div', { class: 'photo-hero__scrim' }));
       hero.appendChild(
+        el('div', { class: 'photo-hero__overlay' }, [
+          el('div', { class: 'photo-hero__title', text: title }),
+          el('div', { class: 'photo-hero__desc', text: description }),
+          el(
+            'button',
+            {
+              class: 'photo-picker-btn',
+              type: 'button',
+              'aria-label': '选择照片',
+              onclick: pickGalleryPhotos
+            },
+            [
+              el('span', { html: HW.icon('picture', 18) }),
+              el('span', { text: photoAlbumLabel() })
+            ]
+          )
+        ])
+      );
+
+      hero.appendChild(
         el(
           'button',
           {
@@ -403,43 +395,13 @@
         )
       );
 
-      var albumText = '选择照片';
-      if (state.isChoosingPhotos) {
-        albumText = '选择中...';
-      } else if (state.photoUris.length > 1) {
-        albumText = '已选择 ' + state.photoUris.length + ' 张';
-      } else if (state.photoUris.length === 1) {
-        albumText = '继续选图';
-      }
-
-      hero.appendChild(
-        el('div', { class: 'photo-hero__content' }, [
-          el('div', { class: 'photo-hero__text' }, [
-            el('div', { class: 'photo-hero__title', text: title }),
-            el('div', { class: 'photo-hero__desc', text: description })
-          ]),
-          el(
-            'button',
-            {
-              class: 'photo-picker-btn',
-              type: 'button',
-              'aria-label': '选择照片',
-              text: albumText,
-              onclick: pickGalleryPhotos
-            },
-            []
-          )
-        ])
-      );
-
       var children = [hero];
 
       if (state.photoUris.length > 0) {
         children.push(
-          el('div', { class: 'stack', style: { gap: '8px', marginTop: '12px' } }, [
+          el('div', { class: 'stack', style: { gap: '8px' } }, [
             el('div', {
-              class: 'text-secondary',
-              style: { fontSize: '13px' },
+              style: { fontSize: '13px', color: 'var(--text-secondary)' },
               text: '已选照片 ' + state.photoUris.length + '/' + models.MAX_USER_PHOTOS
             }),
             helpers.photoThumbnails(state.photoUris, {
@@ -457,50 +419,74 @@
       return el('div', { class: 'stack', style: { gap: '12px' } }, children);
     }
 
-    /* ---------- 渲染：分类字段 ---------- */
+    function photoAlbumLabel() {
+      if (state.isChoosingPhotos) {
+        return '选择中...';
+      }
+      if (state.photoUris.length > 1) {
+        return '已选择 ' + state.photoUris.length + ' 张';
+      }
+      if (state.photoUris.length === 1) {
+        return '继续选图';
+      }
+      return '选择照片';
+    }
+
+    /* ---------- 渲染：分类字段（带 × 的 pill chip） ---------- */
     function renderCategoryField() {
       var children = [
-        el('div', { style: { fontSize: '14px' }, text: '分类（选填）' })
+        el('div', { style: { width: '100%', fontSize: '14px', color: 'var(--text-secondary)' }, text: '分类（选填）' })
       ];
 
-      var chipWrap = el('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } });
+      var chipWrap = el('div', {
+        class: 'row',
+        style: { flexWrap: 'wrap', gap: '0 12px', width: '100%' }
+      });
 
       state.selectedCategoryNames.forEach(function (name) {
         var category = state.categories.filter(function (candidate) {
           return candidate.name === name;
         })[0];
+        var isDeleting = state.deletingCategoryId && category && state.deletingCategoryId === category.id;
 
         var chip = el(
           'button',
           {
-            class: 'chip chip--round chip--active',
+            class: 'cat-chip cat-chip--active',
             type: 'button',
             'aria-label': name + '，已选中',
-            style: { background: 'var(--action-black)', color: 'var(--text-inverse)', borderColor: 'var(--action-black)', paddingRight: '8px' },
             onclick: function () {
-              toggleCategory(name);
+              var index = state.selectedCategoryNames.indexOf(name);
+              if (index >= 0) {
+                state.selectedCategoryNames.splice(index, 1);
+              }
+              renderContent();
             }
           },
-          [el('span', { text: name })]
+          [el('span', { class: 'cat-chip__name', text: name })]
         );
 
         chip.appendChild(
           el(
             'span',
             {
+              class: 'cat-chip__del',
               role: 'button',
               'aria-label': '删除分类 ' + name,
-              style: { marginLeft: '6px', display: 'inline-flex' },
               onclick: function (event) {
                 event.stopPropagation();
                 if (category) {
                   confirmDeleteCategory(category);
                 } else {
-                  toggleCategory(name);
+                  var index = state.selectedCategoryNames.indexOf(name);
+                  if (index >= 0) {
+                    state.selectedCategoryNames.splice(index, 1);
+                  }
+                  renderContent();
                 }
               }
             },
-            [el('span', { html: HW.icon('xmark', 12) })]
+            [el('span', { html: HW.icon('xmark', 11) })]
           )
         );
 
@@ -509,9 +495,8 @@
 
       chipWrap.appendChild(
         el('button', {
-          class: 'chip chip--round',
+          class: 'cat-add' + (state.showCustomCategoryInput ? ' cat-add--active' : ''),
           type: 'button',
-          style: { color: 'var(--selection-accent)', borderColor: 'var(--selection-accent)' },
           text: '自定义分类',
           onclick: addCustomCategory
         })
@@ -533,14 +518,12 @@
           state.categoryDraft = event.target.value;
           var currentError = categoryValidationError();
 
-          /* 更新边框态 */
           if (currentError) {
             input.parentNode.classList.add('input--invalid');
           } else {
             input.parentNode.classList.remove('input--invalid');
           }
 
-          /* 原位更新错误文案，避免整页重绘导致输入框失焦 */
           var errNode = contentHost.querySelector('#outfit_custom_category_error');
           if (currentError) {
             if (errNode) {
@@ -586,11 +569,11 @@
     /* ---------- 渲染：衣物选择器 ---------- */
     function renderClothingPicker(title, description) {
       var children = [
-        el('div', { class: 'row row--between', style: { gap: '8px' } }, [
-          el('div', { style: { fontSize: '16px' }, text: title }),
+        el('div', { class: 'picker__head-row' }, [
+          el('div', { class: 'picker__head-title', text: title }),
           state.clothingItemIds.length > 0
             ? el('div', {
-                style: { fontSize: '12px', color: 'var(--action-black)' },
+                class: 'picker__head-count',
                 text: state.clothingItemIds.length + ' 件已选'
               })
             : null
@@ -598,41 +581,31 @@
       ];
 
       if (description) {
-        children.push(
-          el('div', {
-            class: 'text-secondary',
-            style: { fontSize: '12px', lineHeight: '17px' },
-            text: description
-          })
-        );
+        children.push(el('div', { class: 'picker__head-desc', text: description }));
       }
 
       if (!state.clothingItems.length) {
         children.push(
           el('div', {
-            class: 'text-secondary',
-            style: { fontSize: '14px', marginTop: '6px' },
+            class: 'picker__head-desc',
             text: '暂无衣物，可先去衣柜添加。'
           })
         );
-        return el('div', { class: 'stack', style: { gap: '8px' } }, children);
+        return el('div', { class: 'picker' }, children);
       }
 
-      var list = el('div', { class: 'stack', style: { gap: '8px', marginTop: '6px' } });
+      var list = el('div', { class: 'picker__list' });
 
       state.clothingItems.forEach(function (item) {
         var selected = state.clothingItemIds.indexOf(item.id) >= 0;
+
         var row = el(
           'button',
           {
-            class: 'list-row' + (selected ? ' list-row--selected' : ''),
+            class: 'picker-item' + (selected ? ' picker-item--selected' : ''),
             type: 'button',
             'aria-label':
-              item.name +
-              '，' +
-              models.CLOTHING_PICKER_CATEGORY_LABEL[item.category] +
-              '，' +
-              (selected ? '已选择' : '未选择'),
+              item.name + '，' + (selected ? '已选择' : '未选择'),
             onclick: function () {
               toggleClothingItem(item.id);
             }
@@ -642,21 +615,21 @@
 
         if (item.photoUris && item.photoUris.length > 0) {
           row.appendChild(
-            helpers.photoImage(item.photoUris[0], 'list-row__thumb', item.name)
+            helpers.photoImage(item.photoUris[0], 'picker-item__thumb', item.name)
           );
         } else {
           row.appendChild(
-            el('div', { class: 'list-row__thumb-placeholder' }, [
+            el('div', { class: 'picker-item__thumb-placeholder' }, [
               el('span', { html: HW.icon('shirt', 28) })
             ])
           );
         }
 
         row.appendChild(
-          el('div', { class: 'list-row__body' }, [
-            el('div', { class: 'list-row__title', text: item.name }),
+          el('div', { class: 'picker-item__body' }, [
+            el('div', { class: 'picker-item__name', text: item.name }),
             el('div', {
-              class: 'list-row__meta',
+              class: 'picker-item__cat',
               text: models.CLOTHING_PICKER_CATEGORY_LABEL[item.category]
             })
           ])
@@ -665,7 +638,7 @@
         if (selected) {
           row.appendChild(
             el('span', {
-              style: { width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-inverse)' },
+              class: 'picker-item__check',
               html: HW.icon('checkmark_circle_fill', 26)
             })
           );
@@ -677,7 +650,7 @@
       });
 
       children.push(list);
-      return el('div', { class: 'stack', style: { gap: '8px' } }, children);
+      return el('div', { class: 'picker' }, children);
     }
 
     /* ---------- 渲染主体 ---------- */
@@ -686,67 +659,64 @@
 
       contentHost.appendChild(renderDisplaySourceSelector());
 
-      if (state.displaySource === models.OutfitDisplaySource.Photo) {
-        contentHost.appendChild(
-          renderPhotoSelector('上传这套穿搭照片', '整体、细节或上身效果都可以')
-        );
-        contentHost.appendChild(
-          el('div', { class: 'card stack stack--md' }, [
-            renderClothingPicker(
-              '关联衣柜单品（选填）',
-              '可以把这套穿搭关联到已有衣服，方便以后回看。'
-            )
-          ])
-        );
-      } else {
-        contentHost.appendChild(
-          el('div', { class: 'card stack stack--md' }, [
-            renderClothingPicker(
-              '选择衣柜单品',
-              '至少选择一件有照片的衣物，也可以补充上传穿搭照片。'
-            )
-          ])
-        );
-        contentHost.appendChild(
-          renderPhotoSelector('补充穿搭照片（选填）', '有整体照或上身照时可以放这里')
-        );
-      }
+      var isPhotoMode = state.displaySource === models.OutfitDisplaySource.Photo;
 
-      /* 名称 */
-      var titleInput = el('input', {
+      function buildInfoCard() {
+        var titleInput = el('input', {
         class: 'input__text',
         type: 'text',
         placeholder: '穿搭名称，可不填',
         'aria-label': '穿搭名称'
       });
-      titleInput.value = state.title;
-      titleInput.addEventListener('input', function (event) {
-        state.title = event.target.value;
-      });
+        titleInput.value = state.title;
+        titleInput.addEventListener('input', function (event) {
+          state.title = event.target.value;
+        });
 
-      contentHost.appendChild(
-        el('div', { class: 'card stack stack--md' }, [
-          el('div', { style: { fontSize: '18px' }, text: '穿搭信息（选填）' }),
-          el('div', { class: 'input', style: { height: '52px' } }, [titleInput]),
-          renderCategoryField()
-        ])
-      );
+        var noteArea = el('textarea', {
+          class: 'input__textarea input__textarea--compact',
+          placeholder: '记录场景、试穿感受或搭配想法',
+          'aria-label': '小记'
+        });
+        noteArea.value = state.note;
+        noteArea.addEventListener('input', function (event) {
+          state.note = event.target.value;
+        });
 
-      /* 小记 */
-      var noteArea = helpers.textArea({
-        value: state.note,
-        placeholder: '记录场景、试穿感受或搭配想法',
-        onInput: function (value) {
-          state.note = value;
-        }
-      });
+        return el('div', { class: 'card' }, [
+          el('div', { class: 'card__title', text: '穿搭信息（选填）' }),
+          el('div', { class: 'input' }, [titleInput]),
+          renderCategoryField(),
+          isPhotoMode
+            ? renderClothingPicker(
+                '关联衣柜单品（选填）',
+                '可以把这套穿搭关联到已有衣服，方便以后回看。'
+              )
+            : renderClothingPicker(
+                '选择衣柜单品',
+                '至少选择一件有照片的衣物，也可以补充上传穿搭照片。'
+              ),
+          el('div', { class: 'stack', style: { gap: '8px', width: '100%' } }, [
+            el('div', {
+              style: { fontSize: '14px', color: 'var(--text-secondary)' },
+              text: '小记（选填）'
+            }),
+            noteArea
+          ])
+        ]);
+      }
 
-      contentHost.appendChild(
-        el('div', { class: 'stack', style: { gap: '8px' } }, [
-          el('div', { style: { fontSize: '14px' }, text: '小记（选填）' }),
-          noteArea
-        ])
-      );
+      if (isPhotoMode) {
+        contentHost.appendChild(
+          renderPhotoSelector('上传这套穿搭照片', '整体、细节或上身效果都可以')
+        );
+        contentHost.appendChild(buildInfoCard());
+      } else {
+        contentHost.appendChild(buildInfoCard());
+        contentHost.appendChild(
+          renderPhotoSelector('补充穿搭照片（选填）', '有整体照或上身照时可以放这里')
+        );
+      }
 
       if (state.errorMessage) {
         contentHost.appendChild(
@@ -766,9 +736,7 @@
 
       if (state.isSaving) {
         actionHost.appendChild(
-          el('div', { class: 'btn', style: { cursor: 'default' } }, [
-            el('div', { class: 'spinner spinner--light' })
-          ])
+          el('div', { class: 'save-btn' }, [el('div', { class: 'spinner spinner--light' })])
         );
         return;
       }
@@ -776,7 +744,7 @@
       if (canSave()) {
         actionHost.appendChild(
           el('button', {
-            class: 'btn',
+            class: 'save-btn',
             type: 'button',
             text: '保存穿搭',
             onclick: saveOutfit
@@ -786,11 +754,7 @@
       }
 
       actionHost.appendChild(
-        el('div', {
-          class: 'btn',
-          style: { cursor: 'default', background: 'var(--text-disabled)', color: 'var(--text-primary)' },
-          text: saveButtonLabel()
-        })
+        el('div', { class: 'save-btn save-btn--off', text: saveButtonLabel() })
       );
     }
 
@@ -849,8 +813,10 @@
         } else {
           /* 新建：默认选中「通勤」分类；无分类时展开自定义输入 */
           var tongbu = state.categories.filter(function (category) {
-            return HW.utils.normalizeSearchText(category.name) ===
-              HW.utils.normalizeSearchText('通勤');
+            return (
+              HW.utils.normalizeSearchText(category.name) ===
+              HW.utils.normalizeSearchText('通勤')
+            );
           })[0];
           if (tongbu) {
             state.selectedCategoryNames = [tongbu.name];

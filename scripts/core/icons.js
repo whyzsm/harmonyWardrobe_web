@@ -26,12 +26,15 @@
       '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/>',
     camera_fill:
       '<path d="M9 4h6l1.5 2.5H20a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7.5a1 1 0 0 1 1-1h3.5z" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="4" fill="#fff" stroke="none"/>',
+    /* 上衣：圆领 T 恤（对齐鸿蒙 sys.symbol.shirt） */
     shirt:
-      '<path d="M8 3 4 5.5l1.5 3L8 7.5V21h8V7.5l2.5 1 1.5-3L16 3l-2 1.5h-4z"/>',
+      '<path d="M9 3.2 4.7 5a1 1 0 0 0-.55 1.08l.62 2.9a1 1 0 0 0 1.3.63L8 9.2v10.6A1.2 1.2 0 0 0 9.2 21h5.6a1.2 1.2 0 0 0 1.2-1.2V9.2l1.93.41a1 1 0 0 0 1.3-.63l.62-2.9A1 1 0 0 0 19.3 5L15 3.2a3.3 3.3 0 0 1-6 0z"/>',
+    /* 裤装：T 恤 + 下方长方形衣身（对齐鸿蒙 sys.symbol.clothing） */
     clothing:
-      '<path d="M9 3h6l3 4-2.5 1.5V21h-7V8.5L6 7z"/>',
+      '<path d="M8.6 3.2 5.1 4.7a1 1 0 0 0-.58 1.05l.5 2.3a1 1 0 0 0 1.28.66L8 8.3V10h8V8.3l1.7.41a1 1 0 0 0 1.28-.66l.5-2.3a1 1 0 0 0-.58-1.05L15.4 3.2a3.4 3.4 0 0 1-6.8 0z"/><rect x="8" y="10" width="8" height="10.2" rx="1.1"/>',
+    /* 裙装：衣架 + 垂挂毛巾（对齐鸿蒙 sys.symbol.hanger_and_towels） */
     hanger_and_towels:
-      '<path d="M12 3v3"/><path d="M12 6 3 14.5A1.5 1.5 0 0 0 4 17.5h16a1.5 1.5 0 0 0 1-3z"/>',
+      '<path d="M12 3.1v2.2"/><path d="M10.85 5.3a1.35 1.35 0 1 0 2.1 1.45"/><path d="M3.2 10.5c0-1.8 3.95-3.15 8.8-3.15s8.8 1.35 8.8 3.15c0 .85-.72 1.4-1.47 1.03"/><path d="M7.6 9.9v9.6c0 .62.5 1.1 1.1 1.1h6.4c.6 0 1.1-.48 1.1-1.1v-8.4"/><path d="M7.6 9.9v9.6"/>',
     square_grid_2x2:
       '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
     store_fill:
@@ -69,7 +72,11 @@
     upload:
       '<path d="M12 21V9"/><path d="m7 13 5-5 5 5"/><path d="M4 4h16"/>',
     ellipsis:
-      '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>'
+      '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+    arrow_left_arrow_right:
+      '<path d="M9 7 4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/>',
+    creditcard_fill:
+      '<rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" stroke="none"/>'
   };
 
   /**

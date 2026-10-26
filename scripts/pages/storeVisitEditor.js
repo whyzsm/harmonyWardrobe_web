@@ -1,5 +1,6 @@
 /* 衣不缺 Web 版 — 新增/编辑逛店 / StoreVisitEditPage
-   对应鸿蒙端 entry/src/main/ets/pages/StoreVisitEditPage.ets。 */
+   对应鸿蒙端 entry/src/main/ets/pages/StoreVisitEditPage.ets。
+   滚动内容：padding {left:20, right:20, top:20, bottom:28/112}，Column space 32。 */
 (function (global) {
   'use strict';
 
@@ -12,9 +13,9 @@
   HW.pages = HW.pages || {};
 
   var VISIT_STATUS_OPTIONS = [
-    { label: '已去', value: models.StoreVisitStatus.Visited, icon: 'store_fill' },
-    { label: '想去', value: models.StoreVisitStatus.WantToVisit, icon: 'heart' },
-    { label: '回购', value: models.StoreVisitStatus.Repurchase, icon: 'arrow_clockwise' }
+    { label: '已去', value: models.StoreVisitStatus.Visited },
+    { label: '想去', value: models.StoreVisitStatus.WantToVisit },
+    { label: '回购', value: models.StoreVisitStatus.Repurchase }
   ];
 
   var VISIT_FOCUS_TAGS = [
@@ -43,8 +44,11 @@
     var root = el('div', { class: 'page' });
     var headerHost = el('div');
     var scrollHost = el('div', { class: 'page__body scroll-y' });
-    var contentHost = el('div', { class: 'stack', style: { padding: '28px 20px 112px' } });
-    var actionHost = el('div', { class: 'action-bar' });
+    var contentHost = el('div', {
+      class: 'stack',
+      style: { padding: '20px 20px 112px', gap: '32px' }
+    });
+    var actionHost = el('div', { class: 'action-bar action-bar--sheet' });
 
     /* ---------- 校验 ---------- */
     function isStoreNameInvalid() {
@@ -59,11 +63,7 @@
       state.submitted = true;
       var valid =
         state.storeName.trim().length > 0 && state.districtOrAddress.trim().length > 0;
-      if (!valid) {
-        state.errorMessage = '先补上店名和商圈，再保存这条逛店记录。';
-      } else {
-        state.errorMessage = '';
-      }
+      state.errorMessage = valid ? '' : '还有信息没填完';
       return valid;
     }
 
@@ -168,11 +168,12 @@
         });
     }
 
-    /* ---------- 渲染 ---------- */
+    /* ---------- 渲染：照片区（有照片时才有 scrim + 叠加文字） ---------- */
     function renderPhotoUploader() {
       var hero = el('div', { class: 'photo-hero' });
+      var hasPhoto = state.photoUris.length > 0;
 
-      if (state.photoUris.length > 0) {
+      if (hasPhoto) {
         hero.appendChild(
           helpers.photoCarousel(state.photoUris, {
             alt: '店铺照片',
@@ -189,7 +190,19 @@
         );
       }
 
-      hero.appendChild(el('div', { class: 'photo-hero__scrim' }));
+      if (hasPhoto) {
+        hero.appendChild(el('div', { class: 'photo-hero__scrim' }));
+        hero.appendChild(
+          el('div', { class: 'photo-hero__overlay' }, [
+            el('div', { class: 'photo-hero__title', text: '拍下这家店的第一眼' }),
+            el('div', {
+              class: 'photo-hero__desc',
+              text: '招牌、试衣间或想回看的单品都可以'
+            })
+          ])
+        );
+      }
+
       hero.appendChild(
         el(
           'button',
@@ -211,148 +224,131 @@
         : '选择照片';
 
       hero.appendChild(
-        el('div', { class: 'photo-hero__content' }, [
-          el('div', { class: 'photo-hero__text' }, [
-            el('div', { class: 'photo-hero__title', text: '拍下这家店的第一眼' }),
-            el('div', {
-              class: 'photo-hero__desc',
-              text: '招牌、试衣间或想回看的单品都可以'
-            })
-          ]),
-          el(
-            'button',
-            {
-              class: 'photo-picker-btn',
-              type: 'button',
-              'aria-label': '选择照片',
-              text: albumText,
-              onclick: pickGalleryPhotos
-            },
-            []
-          )
-        ])
+        el(
+          'button',
+          {
+            class: 'photo-picker-btn photo-picker-btn--corner',
+            type: 'button',
+            'aria-label': '选择照片',
+            onclick: pickGalleryPhotos
+          },
+          [
+            el('span', { html: HW.icon('picture', 18) }),
+            el('span', { text: albumText })
+          ]
+        )
       );
 
       return hero;
     }
 
+    /* ---------- 渲染：基础信息（图标在标签行，输入框独立） ---------- */
     function renderBasicInfo() {
-      var storeInput = el('input', {
-        class: 'input__text',
-        type: 'text',
-        placeholder: '例如：静安嘉里 COS',
-        'aria-label': '店名 / 品牌'
-      });
-      storeInput.value = state.storeName;
-      storeInput.addEventListener('input', function (event) {
-        state.storeName = event.target.value;
-        if (state.submitted) {
-          state.errorMessage = '';
-        }
-        renderError();
-      });
+      function field(options) {
+        var input = el('input', {
+          class: 'input-standalone__text',
+          type: 'text',
+          placeholder: options.placeholder,
+          'aria-label': options.label
+        });
+        input.value = state[options.key];
+        input.addEventListener('input', function (event) {
+          state[options.key] = event.target.value;
+          if (state.submitted) {
+            state.errorMessage = '';
+          }
+          renderErrorBanner();
+        });
 
-      var addressInput = el('input', {
-        class: 'input__text',
-        type: 'text',
-        placeholder: '例如：静安寺 · 二楼女装区',
-        'aria-label': '商圈 / 地址'
-      });
-      addressInput.value = state.districtOrAddress;
-      addressInput.addEventListener('input', function (event) {
-        state.districtOrAddress = event.target.value;
-        if (state.submitted) {
-          state.errorMessage = '';
-        }
-        renderError();
-      });
+        var invalid = options.invalid();
 
-      var children = [];
-
-      children.push(
-        el('div', { class: 'stack', style: { gap: '8px' } }, [
-          el('div', { class: 'row', style: { gap: '8px' } }, [
-            el('span', { class: 'text-secondary', html: HW.icon('store_fill', 18) }),
-            el('span', { style: { fontSize: '14px' }, text: '店名 / 品牌' })
+        return el('div', { class: 'stack', style: { gap: '10px' } }, [
+          el('div', { class: 'field__label-row' }, [
+            el('span', { class: 'field__label-icon', html: HW.icon(options.icon, 18) }),
+            el('span', { class: 'field__label', text: options.label })
           ]),
           el('div', {
-            class: 'input' + (isStoreNameInvalid() ? ' input--invalid' : ''),
-            style: { height: '56px' }
-          }, [storeInput]),
-          isStoreNameInvalid()
+            class: 'input-standalone' + (invalid ? ' input-standalone--invalid' : '')
+          }, [input]),
+          invalid
             ? el('div', {
-                class: 'text-danger',
-                style: { fontSize: '12px' },
-                text: '请输入这家店或品牌名称。'
+                class: 'field__error',
+                text: options.errorText
               })
             : null
-        ])
-      );
+        ]);
+      }
 
-      children.push(
-        el('div', { class: 'stack', style: { gap: '8px' } }, [
-          el('div', { class: 'row', style: { gap: '8px' } }, [
-            el('span', { class: 'text-secondary', html: HW.icon('mappin_and_rectangle', 18) }),
-            el('span', { style: { fontSize: '14px' }, text: '商圈 / 地址' })
-          ]),
-          el('div', {
-            class: 'input' + (isAddressInvalid() ? ' input--invalid' : ''),
-            style: { height: '56px' }
-          }, [addressInput]),
-          isAddressInvalid()
-            ? el('div', {
-                class: 'text-danger',
-                style: { fontSize: '12px' },
-                text: '请输入商圈、商场或大概位置。'
-              })
-            : null
-        ])
-      );
-
-      return el('div', { class: 'stack', style: { gap: '24px' } }, children);
+      return el('div', { class: 'stack', style: { gap: '24px' } }, [
+        field({
+          icon: 'store_fill',
+          label: '店名 / 品牌',
+          placeholder: '例如：静安嘉里 COS',
+          key: 'storeName',
+          invalid: isStoreNameInvalid,
+          errorText: '请输入这家店或品牌名称。'
+        }),
+        field({
+          icon: 'mappin_and_rectangle',
+          label: '商圈 / 地址',
+          placeholder: '例如：静安寺 · 二楼女装区',
+          key: 'districtOrAddress',
+          invalid: isAddressInvalid,
+          errorText: '请输入商圈、商场或大概位置。'
+        })
+      ]);
     }
 
-    function renderStatusCard() {
-      var statusRow = el('div', { class: 'row', style: { gap: '12px' } });
+    /* ---------- 渲染：分区标签（竖条） ---------- */
+    function sectionLabel(text) {
+      return el('div', { class: 'section-label' }, [
+        el('span', { class: 'section-label__bar' }),
+        el('span', { class: 'section-label__text', text: text })
+      ]);
+    }
+
+    /* ---------- 渲染：逛店状态 ---------- */
+    function renderStatusSection() {
+      var row = el('div', { class: 'status-row' });
+
       VISIT_STATUS_OPTIONS.forEach(function (option) {
         var isActive = state.status === option.value;
-        statusRow.appendChild(
+        row.appendChild(
           el(
             'button',
             {
-              class: 'chip chip--wide' + (isActive ? ' chip--active' : ''),
+              class: 'status-chip' + (isActive ? ' status-chip--active' : ''),
               type: 'button',
-              style: { height: '48px', borderRadius: 'var(--radius-full)' },
               'aria-label': option.label + (isActive ? '，已选中' : ''),
+              text: option.label,
               onclick: function () {
                 state.status = option.value;
                 renderContent();
               }
             },
-            [
-              el('span', { html: HW.icon(option.icon, 14) }),
-              el('span', { text: option.label })
-            ]
+            []
           )
         );
       });
 
-      var tagGrid = el('div', {
-        style: {
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '12px'
-        }
-      });
+      return el('div', { class: 'stack', style: { gap: '16px' } }, [
+        sectionLabel('逛店状态'),
+        row
+      ]);
+    }
+
+    /* ---------- 渲染：这次要记什么（2×2 标签网格） ---------- */
+    function renderFocusTagSection() {
+      var grid = el('div', { class: 'tag-grid' });
+
       VISIT_FOCUS_TAGS.forEach(function (tag) {
         var isActive = state.focusTags.indexOf(tag.label) >= 0;
-        tagGrid.appendChild(
+        grid.appendChild(
           el(
             'button',
             {
-              class: 'chip chip--wide' + (isActive ? ' chip--active' : ''),
+              class: 'tag-cell' + (isActive ? ' tag-cell--active' : ''),
               type: 'button',
-              style: { height: '52px', borderRadius: 'var(--radius-full)' },
               'aria-label': tag.label + (isActive ? '，已选中' : ''),
               onclick: function () {
                 var index = state.focusTags.indexOf(tag.label);
@@ -365,52 +361,37 @@
               }
             },
             [
-              el('span', { html: HW.icon(tag.icon, 14) }),
+              el('span', { class: 'tag-cell__icon', html: HW.icon(tag.icon, 18) }),
               el('span', { text: tag.label })
             ]
           )
         );
       });
 
-      function sectionLabel(text) {
-        return el('div', { class: 'row', style: { gap: '8px' } }, [
-          el('span', {
-            style: {
-              width: '2px',
-              height: '20px',
-              background: 'var(--action-black)',
-              borderRadius: '1px'
-            }
-          }),
-          el('span', { style: { fontSize: '14px' }, text: text })
-        ]);
-      }
-
-      return el('div', { class: 'stack', style: { gap: '32px' } }, [
-        el('div', { class: 'stack', style: { gap: '12px' } }, [
-          sectionLabel('逛店状态'),
-          statusRow
-        ]),
-        el('div', { class: 'stack', style: { gap: '12px' } }, [
-          sectionLabel('这次要记什么'),
-          tagGrid
-        ])
+      return el('div', { class: 'stack', style: { gap: '16px' } }, [
+        sectionLabel('这次要记什么'),
+        grid
       ]);
     }
 
-    var errorHost = el('div');
+    /* ---------- 顶部错误横幅 ---------- */
+    var errorHost = el('div', { style: { width: '100%' } });
 
-    function renderError() {
+    function renderErrorBanner() {
       ui.clear(errorHost);
-
-      if (state.submitted && (isStoreNameInvalid() || isAddressInvalid())) {
+      if (!state.submitted) {
+        return;
+      }
+      if (isStoreNameInvalid() || isAddressInvalid()) {
         errorHost.appendChild(
           el('div', {
             style: {
+              width: '100%',
               padding: '12px 13px',
               background: 'var(--bg-gray)',
               border: '1px solid var(--danger)',
-              borderRadius: 'var(--radius-md)'
+              borderRadius: 'var(--radius-md)',
+              boxSizing: 'border-box'
             }
           }, [
             el('div', {
@@ -426,7 +407,6 @@
         );
         return;
       }
-
       if (state.errorMessage) {
         errorHost.appendChild(
           el('div', {
@@ -438,13 +418,15 @@
       }
     }
 
+    /* ---------- 渲染主体 ---------- */
     function renderContent() {
       ui.clear(contentHost);
       contentHost.appendChild(renderPhotoUploader());
       contentHost.appendChild(errorHost);
-      renderError();
+      renderErrorBanner();
       contentHost.appendChild(renderBasicInfo());
-      contentHost.appendChild(renderStatusCard());
+      contentHost.appendChild(renderStatusSection());
+      contentHost.appendChild(renderFocusTagSection());
       helpers.resolvePhotos(contentHost);
     }
 
@@ -453,7 +435,7 @@
 
       if (state.isSaving) {
         actionHost.appendChild(
-          el('div', { class: 'btn', style: { cursor: 'default' } }, [
+          el('div', { class: 'save-btn save-btn--sm-font' }, [
             el('div', { class: 'spinner spinner--light' })
           ])
         );
@@ -462,7 +444,7 @@
 
       actionHost.appendChild(
         el('button', {
-          class: 'btn',
+          class: 'save-btn save-btn--sm-font',
           type: 'button',
           text: '保存记录',
           onclick: saveStoreVisit

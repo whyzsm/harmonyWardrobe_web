@@ -206,7 +206,10 @@
 
   /* ---------- 卡片网格（瀑布流） ---------- */
   /**
-   * 渲染图片墙卡片
+   * 渲染图片墙卡片。三种主 Tab 的卡片结构不同：
+   *   wardrobe — 标题与 meta 同行（14px / 12px），角标在左上
+   *   outfit   — 标题与分类同行、备注另起一行（14px / 11px），计数在右下
+   *   store    — 门店名与 meta 同行（14px / 11px），状态在右上
    * @param {object} options
    */
   function wallCard(options) {
@@ -219,14 +222,17 @@
     if (opts.photoId) {
       media.appendChild(photoImage(opts.photoId, 'wall-card__image', opts.title || '照片'));
     } else {
-      media.appendChild(
-        el('div', { class: 'wall-card__placeholder' }, [
-          el('span', { html: HW.icon(opts.placeholderIcon || 'picture', 24) }),
-          el('span', { class: 'wall-card__placeholder-text', text: '暂无照片' })
-        ])
-      );
+      var placeholder = el('div', { class: 'wall-card__placeholder' }, [
+        el('span', { html: HW.icon(opts.placeholderIcon || 'picture', opts.placeholderIconSize || 34) }),
+        el('span', {
+          class: 'wall-card__placeholder-text' + (opts.placeholderTextSmall ? ' wall-card__placeholder-text--sm' : ''),
+          text: '暂无照片'
+        })
+      ]);
+      media.appendChild(placeholder);
     }
 
+    /* 角标：左上分类图标（衣柜） */
     if (opts.badgeIcon) {
       media.appendChild(
         el('span', {
@@ -236,10 +242,12 @@
       );
     }
 
+    /* 状态气泡：右上（逛街） */
     if (opts.statusText) {
       media.appendChild(el('span', { class: 'wall-card__status', text: opts.statusText }));
     }
 
+    /* 计数气泡：右下（穿搭） */
     if (opts.photoCount && opts.photoCount > 2) {
       media.appendChild(
         el('span', { class: 'wall-card__count', text: '+' + (opts.photoCount - 2) })
@@ -270,23 +278,39 @@
 
     var children = [media];
 
-    if (opts.title || opts.meta) {
+    /* 文本区：三种布局分别处理 */
+    if (opts.layout === 'outfit') {
       children.push(
-        el('div', { class: 'wall-card__body' }, [
-          el('div', { class: 'wall-card__title', text: opts.title || '' }),
-          opts.meta ? el('div', { class: 'wall-card__meta', text: opts.meta }) : null
+        el('div', { class: 'wall-card__text-row' }, [
+          el('div', { class: 'wall-card__stack' }, [
+            el('div', { class: 'wall-card__title-row' }, [
+              el('div', { class: 'wall-card__title wall-card__title--tight', text: opts.title || '' }),
+              el('div', { class: 'wall-card__category', text: opts.category || '' })
+            ]),
+            el('div', { class: 'wall-card__meta wall-card__meta--sm', text: opts.meta || '' })
+          ])
         ])
       );
-    }
-
-    if (opts.tags) {
-      children.push(el('div', { class: 'wall-card__tags', text: opts.tags }));
+    } else if (opts.layout === 'store') {
+      children.push(
+        el('div', { class: 'wall-card__text-row' }, [
+          el('div', { class: 'wall-card__title wall-card__title--tight', text: opts.title || '' }),
+          el('div', { class: 'wall-card__meta wall-card__meta--sm', text: opts.meta || '' })
+        ])
+      );
+    } else {
+      children.push(
+        el('div', { class: 'wall-card__text-row' }, [
+          el('div', { class: 'wall-card__title', text: opts.title || '' }),
+          el('div', { class: 'wall-card__meta', text: opts.meta || '' })
+        ])
+      );
     }
 
     var card = el(
       'button',
       {
-        class: 'wall-card',
+        class: 'wall-card' + (opts.layout === 'outfit' ? '' : ' wall-card--tight'),
         type: 'button',
         'aria-label': opts.accessibilityText || opts.title || '卡片',
         onclick: opts.onClick
@@ -453,13 +477,16 @@
   function createMasonry(options) {
     var opts = options || {};
     var columnsCount = opts.columns || 2;
+    var inset = !!opts.inset;
     /* 列内条目间距，对应 ArkUI WaterFlow 的 rowsGap(8)；
        列之间的间距由 CSS .waterflow 的 gap（columnsGap 16）控制。 */
     var rowGap = opts.rowGap === undefined ? 8 : opts.rowGap;
 
     var container = el('div', { class: 'waterflow-host' });
-    var flow = el('div', { class: 'waterflow' });
-    var emptyHost = el('div', { class: 'waterflow-empty' });
+    var flow = el('div', { class: 'waterflow' + (inset ? ' waterfall--inset' : '') });
+    var emptyHost = el('div', {
+      class: 'waterflow-empty' + (inset ? ' waterfall-empty--inset' : '')
+    });
     var columns = [];
     for (var i = 0; i < columnsCount; i += 1) {
       columns.push(el('div', { class: 'waterflow__column' }));

@@ -1,5 +1,6 @@
 /* 衣不缺 Web 版 — 穿搭页 / OutfitsPage
-   对应鸿蒙端 entry/src/main/ets/pages/OutfitsPage.ets。 */
+   对应鸿蒙端 entry/src/main/ets/pages/OutfitsPage.ets。
+   根 Column：space 14，无 padding（子元素自带），bg bgDefault。 */
 (function (global) {
   'use strict';
 
@@ -25,11 +26,16 @@
       deletingId: ''
     };
 
-    var root = el('div', { class: 'page' });
-    var headerHost = el('div');
-    var filterHost = el('div');
+    var root = el('div', {
+      class: 'page',
+      style: { gap: '14px', alignItems: 'stretch' }
+    });
+    var headerHost = el('div', { style: { padding: '14px 20px 0' } });
+    var filterHost = el('div', {
+      style: { padding: '0 20px', width: '100%', height: '44px' }
+    });
     var bodyHost = el('div', { class: 'page__body page__body--column' });
-    var masonry = helpers.createMasonry({ columns: 2, rowGap: 8 });
+    var masonry = helpers.createMasonry({ columns: 2, rowGap: 8, inset: true });
     var listHost = masonry.container;
 
     /* ---------- 搜索头 ---------- */
@@ -46,32 +52,33 @@
         renderList();
       });
 
-      return el('div', { class: 'section-block', style: { paddingTop: '14px' } }, [
-        el('div', { class: 'search-header' }, [
-          el(
-            'button',
-            {
-              class: 'search-header__icon-button',
-              type: 'button',
-              'aria-label': '执行搜索',
-              html: HW.icon('magnifyingglass', 18),
-              onclick: function () {
-                HW.App.navigate(HW.App.RouteKind.Search, models.AppMainTab.Outfit, {
-                  query: state.searchQuery
-                });
-              }
-            },
-            []
-          ),
-          searchInput
-        ])
+      return el('div', { class: 'search-header' }, [
+        el(
+          'button',
+          {
+            class: 'search-header__icon-button',
+            type: 'button',
+            'aria-label': '执行搜索',
+            html: HW.icon('magnifyingglass', 18),
+            onclick: function () {
+              HW.App.navigate(HW.App.RouteKind.Search, models.AppMainTab.Outfit, {
+                query: state.searchQuery
+              });
+            }
+          },
+          []
+        ),
+        searchInput
       ]);
     }
 
-    /* ---------- 分类筛选 ---------- */
+    /* ---------- 分类筛选（宽度随内容） ---------- */
     function renderFilters() {
       ui.clear(filterHost);
-      var row = el('div', { class: 'chip-row' });
+      var row = el('div', {
+        class: 'row',
+        style: { gap: '8px', height: '44px', overflowX: 'auto', scrollbarWidth: 'none' }
+      });
 
       function addChip(label, categoryId, iconName) {
         var isActive = state.selectedCategoryId === categoryId;
@@ -79,7 +86,7 @@
           el(
             'button',
             {
-              class: 'chip' + (isActive ? ' chip--active' : ''),
+              class: 'chip-filter' + (isActive ? ' chip-filter--active' : ''),
               type: 'button',
               'aria-label': label + (isActive ? '，已选中' : ''),
               onclick: function () {
@@ -89,7 +96,7 @@
               }
             },
             [
-              el('span', { html: HW.icon(iconName, 14) }),
+              el('span', { class: 'chip-filter__icon', html: HW.icon(iconName, 17) }),
               el('span', { text: label })
             ]
           )
@@ -105,7 +112,7 @@
     }
 
     /* ---------- 提示条 ---------- */
-    var noticeHost = el('div', { class: 'section-block' });
+    var noticeHost = el('div', { style: { padding: '0 20px', width: '100%' } });
 
     function renderNotice() {
       ui.clear(noticeHost);
@@ -124,7 +131,7 @@
     /* ---------- 引导卡 ---------- */
     function renderGuideCard() {
       var hasClothing = state.clothingItems.length > 0;
-      return el('div', { class: 'section-block' }, [
+      return el('div', { style: { padding: '0 20px', width: '100%' } }, [
         el('div', { class: 'guide-card' }, [
           el('div', { class: 'guide-card__text' }, [
             el('div', {
@@ -135,7 +142,7 @@
               class: 'guide-card__desc',
               text: hasClothing
                 ? '选择衣柜里的真实单品，组合适合自己的穿搭。'
-                : '衣柜中有单品后，就可以在这里创建穿搭。'
+                : '衣柜中有单品后，就可以在这里创建搭配。'
             })
           ]),
           el('div', { class: 'guide-card__badge', text: state.clothingItems.length + ' 件' })
@@ -166,6 +173,7 @@
       });
     }
 
+    /* outfitStackAspectRatio(index)：index%4===2 → 1/1.18，其余 1/1.48 */
     function outfitStackAspectRatio(index) {
       return index % 4 === 2 ? 1 / 1.18 : 1 / 1.48;
     }
@@ -193,28 +201,30 @@
       }
 
       if (items.length === 0) {
-        var filteredEmpty = el('div', {}, [
-          ui.wallEmptyState({
-            icon: 'hanger_and_towels',
-            cardTitle: '暂时没有这类穿搭',
-            cardDesc: '当前分类下还没有匹配的穿搭。',
-            title: '换一个分类看看，或查看全部穿搭',
-            desc: '已有穿搭会继续按图片组合流排在这里。'
-          }),
-          el('div', { class: 'section-block', style: { paddingBottom: '20px' } }, [
-            el('button', {
-              class: 'btn btn--sm',
-              type: 'button',
-              text: '查看全部',
-              onclick: function () {
-                state.selectedCategoryId = '';
-                renderFilters();
-                renderList();
-              }
-            })
+        masonry.showEmpty(
+          el('div', {}, [
+            ui.wallEmptyState({
+              icon: 'hanger_and_towels',
+              cardTitle: '暂时没有这类穿搭',
+              cardDesc: '当前分类下还没有匹配的穿搭。',
+              title: '换一个分类看看，或查看全部穿搭',
+              desc: '已有穿搭会继续按图片组合流排在这里。'
+            }),
+            el('div', { style: { paddingBottom: '20px' } }, [
+              el('button', {
+                class: 'btn btn--sm',
+                type: 'button',
+                style: { width: 'auto', padding: '0 24px', fontSize: '14px' },
+                text: '查看全部',
+                onclick: function () {
+                  state.selectedCategoryId = '';
+                  renderFilters();
+                  renderList();
+                }
+              })
+            ])
           ])
-        ]);
-        masonry.showEmpty(filteredEmpty);
+        );
         return;
       }
 
@@ -231,12 +241,15 @@
 
         var aspectRatio = outfitStackAspectRatio(index);
         var card = helpers.wallCard({
+          layout: 'outfit',
           aspectRatio: aspectRatio,
           photoId: photoUris.length ? photoUris[0] : '',
           placeholderIcon: 'picture',
+          placeholderIconSize: 24,
+          placeholderTextSmall: true,
           photoCount: photoUris.length,
           title: helpers.displayOutfitTitle(outfit),
-          tags: categoryText,
+          category: categoryText,
           meta: meta,
           accessibilityText: helpers.displayOutfitTitle(outfit),
           onClick: function () {
@@ -363,21 +376,30 @@
       ui.clear(bodyHost);
 
       if (state.loading) {
-        bodyHost.appendChild(ui.loadingBlock('正在加载穿搭...'));
+        bodyHost.appendChild(
+          el('div', { class: 'loading-block', style: { flex: '1' } }, [
+            el('div', { class: 'spinner' }),
+            el('div', { class: 'loading-block__text', text: '正在加载穿搭...' })
+          ])
+        );
         return;
       }
 
       if (state.errorMessage) {
         bodyHost.appendChild(
-          el('div', { class: 'stack stack--md', style: { padding: '20px' } }, [
+          el('div', {
+            class: 'stack stack--md',
+            style: { flex: '1', justifyContent: 'center', padding: '0 20px' }
+          }, [
             el('div', {
               class: 'text-danger',
-              style: { fontSize: '14px', maxLines: '3' },
+              style: { fontSize: '14px' },
               text: state.errorMessage
             }),
             el('button', {
               class: 'btn btn--sm',
               type: 'button',
+              style: { width: 'auto', padding: '0 24px' },
               text: '重试',
               onclick: load
             })

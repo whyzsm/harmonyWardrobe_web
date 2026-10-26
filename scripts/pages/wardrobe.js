@@ -1,5 +1,6 @@
 /* 衣不缺 Web 版 — 衣柜页 / WardrobePage
-   对应鸿蒙端 entry/src/main/ets/pages/WardrobePage.ets。 */
+   对应鸿蒙端 entry/src/main/ets/pages/WardrobePage.ets。
+   根 Column：padding {left:20, right:20, top:14, bottom:0}，space 14，bg cardWhite。 */
 (function (global) {
   'use strict';
 
@@ -23,7 +24,10 @@
       deletingId: ''
     };
 
-    var root = el('div', { class: 'page' });
+    var root = el('div', {
+      class: 'page',
+      style: { padding: '14px 20px 0', gap: '14px' }
+    });
     var masonry = helpers.createMasonry({ columns: 2, rowGap: 8 });
     var listHost = masonry.container;
 
@@ -40,39 +44,39 @@
       renderList();
     });
 
-    var searchHeader = el('div', { class: 'section-block', style: { paddingTop: '14px' } }, [
-      el('div', { class: 'search-header' }, [
-        el(
-          'button',
-          {
-            class: 'search-header__icon-button',
-            type: 'button',
-            'aria-label': '执行搜索',
-            html: HW.icon('magnifyingglass', 18),
-            onclick: function () {
-              openUnifiedSearch();
-            }
-          },
-          []
-        ),
-        searchInput
-      ])
+    var searchHeader = el('div', { class: 'search-header' }, [
+      el(
+        'button',
+        {
+          class: 'search-header__icon-button',
+          type: 'button',
+          'aria-label': '执行搜索',
+          html: HW.icon('magnifyingglass', 18),
+          onclick: function () {
+            openUnifiedSearch();
+          }
+        },
+        []
+      ),
+      searchInput
     ]);
 
-    /* ---------- 分类筛选 ---------- */
-    var filterHost = el('div', { class: 'section-block', style: { paddingTop: '0' } });
+    /* ---------- 分类筛选（等宽 pill） ---------- */
+    var filterHost = el('div', {
+      class: 'row',
+      style: { gap: '6px', width: '100%', height: '44px' }
+    });
 
     function renderFilters() {
       ui.clear(filterHost);
-      var row = el('div', { class: 'chip-row' });
 
       models.WARDROBE_CATEGORY_FILTERS.forEach(function (filter) {
         var isActive = state.selectedCategoryLabel === filter.label;
-        row.appendChild(
+        filterHost.appendChild(
           el(
             'button',
             {
-              class: 'chip' + (isActive ? ' chip--active' : ''),
+              class: 'chip-tab' + (isActive ? ' chip-tab--active' : ''),
               type: 'button',
               'aria-label': filter.label + (isActive ? '，已选中' : ''),
               onclick: function () {
@@ -82,18 +86,16 @@
               }
             },
             [
-              el('span', { html: HW.icon(filter.icon, 14) }),
+              el('span', { class: 'chip-tab__icon', html: HW.icon(filter.icon, 14) }),
               el('span', { text: filter.label })
             ]
           )
         );
       });
-
-      filterHost.appendChild(row);
     }
 
     /* ---------- 筛选提示条 ---------- */
-    var noticeHost = el('div', { class: 'section-block' });
+    var noticeHost = el('div', { style: { width: '100%' } });
 
     function renderNotice() {
       ui.clear(noticeHost);
@@ -109,7 +111,7 @@
       );
     }
 
-    /* ---------- 列表 ---------- */
+    /* ---------- 过滤 ---------- */
     function filteredItems() {
       var filter = models.WARDROBE_CATEGORY_FILTERS.filter(function (candidate) {
         return candidate.label === state.selectedCategoryLabel;
@@ -132,6 +134,7 @@
       });
     }
 
+    /* wardrobeCardAspectRatio(index)：0.73 / 0.83 / 0.82 */
     function cardAspectRatio(index) {
       if (index % 4 === 0) {
         return 0.73;
@@ -142,6 +145,7 @@
       return 0.82;
     }
 
+    /* ---------- 列表 ---------- */
     function renderList() {
       masonry.reset();
       var items = filteredItems();
@@ -166,9 +170,11 @@
       items.forEach(function (item, index) {
         var aspectRatio = cardAspectRatio(index);
         var card = helpers.wallCard({
+          layout: 'wardrobe',
           aspectRatio: aspectRatio,
           photoId: item.photoUris && item.photoUris.length ? item.photoUris[0] : '',
           placeholderIcon: 'picture',
+          placeholderIconSize: 34,
           badgeIcon: helpers.categoryIconName(item.category),
           title: helpers.displayItemTitle(item),
           meta: helpers.displayItemMeta(item),
@@ -182,13 +188,16 @@
             openDetail(item);
           },
           onLongPress: function () {
-            showDeleteOverlay(item, card);
+            if (state.deletingId) {
+              return;
+            }
+            state.deleteOverlayId = item.id;
+            renderList();
           }
         });
 
         if (state.deleteOverlayId === item.id) {
-          var media = card.querySelector('.wall-card__media');
-          helpers.attachDeleteOverlay(media, {
+          helpers.attachDeleteOverlay(card.querySelector('.wall-card__media'), {
             label: '删除衣物',
             deleting: state.deletingId === item.id,
             onDelete: function () {
@@ -205,14 +214,6 @@
       });
 
       helpers.resolvePhotos(listHost);
-    }
-
-    function showDeleteOverlay(item, card) {
-      if (state.deletingId) {
-        return;
-      }
-      state.deleteOverlayId = item.id;
-      renderList();
     }
 
     function confirmDelete(item) {
@@ -248,10 +249,7 @@
             state.deleteOverlayId = '';
             state.deletingId = '';
             renderList();
-            ctx.showToast(
-              HW.utils.userFacingError(error, '删除衣物失败'),
-              true
-            );
+            ctx.showToast(HW.utils.userFacingError(error, '删除衣物失败'), true);
           });
       });
     }
@@ -298,8 +296,7 @@
       if (state.loading) {
         bodyHost.appendChild(
           el('div', {
-            class: 'text-secondary',
-            style: { padding: '20px', fontSize: '14px' },
+            style: { padding: '0 0', fontSize: '14px', color: 'var(--text-secondary)' },
             text: '正在加载衣柜...'
           })
         );
@@ -308,7 +305,7 @@
 
       if (state.errorMessage) {
         bodyHost.appendChild(
-          el('div', { class: 'row', style: { gap: '8px', padding: '14px 20px' } }, [
+          el('div', { class: 'row', style: { gap: '8px', width: '100%' } }, [
             el('div', {
               class: 'text-danger grow',
               style: { fontSize: '14px' },
@@ -342,39 +339,6 @@
 
     return {
       el: root,
-      /** 保存衣物后回写列表 */
-      upsertClothingItem: function (savedItem) {
-        var index = -1;
-        state.clothingItems.forEach(function (item, i) {
-          if (item.id === savedItem.id) {
-            index = i;
-          }
-        });
-        if (index >= 0) {
-          state.clothingItems[index] = savedItem;
-        } else {
-          state.clothingItems.unshift(savedItem);
-        }
-
-        /* 判断保存后是否仍落在当前筛选内 */
-        var filter = models.WARDROBE_CATEGORY_FILTERS.filter(function (candidate) {
-          return candidate.label === state.selectedCategoryLabel;
-        })[0];
-        var categories = filter ? filter.categories : null;
-        var query = state.searchQuery.trim().toLowerCase();
-        var matchesCategory = !categories || categories.indexOf(savedItem.category) >= 0;
-        var matchesQuery =
-          query === '' ||
-          String(savedItem.name).toLowerCase().indexOf(query) >= 0 ||
-          (savedItem.note !== undefined &&
-            String(savedItem.note).toLowerCase().indexOf(query) >= 0);
-
-        state.savedOutsideFilterId =
-          matchesCategory && matchesQuery ? '' : savedItem.id;
-
-        renderNotice();
-        renderList();
-      },
       destroy: function () {}
     };
   };

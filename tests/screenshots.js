@@ -76,26 +76,26 @@ const SHOTS = [
   { name: '04-profile-tab', setup: `HW.App.switchTab('profile')`, wait: `!!document.querySelector('.profile-hero')` },
   { name: '05-clothing-detail', setup: `(async()=>{const c=(await HW.ClothingRepository.listClothing())[0];HW.App.navigate(HW.App.RouteKind.ClothingDetail,'wardrobe',{clothingId:c.id})})()`, wait: `!!document.querySelector('.hero-photo')` },
   { name: '06-clothing-editor', setup: `(async()=>{const c=(await HW.ClothingRepository.listClothing())[0];HW.App.navigate(HW.App.RouteKind.ClothingEditor,'wardrobe',{clothingId:c.id})})()`, wait: `!!document.querySelector('.name-card__input')` },
-  { name: '07-outfit-editor', setup: `(async()=>{const o=(await HW.OutfitRepository.listOutfits())[0];HW.App.navigate(HW.App.RouteKind.OutfitEditor,'outfit',{outfitId:o.id})})()`, wait: `document.body.innerText.includes('展示内容')` },
-  { name: '08-search', setup: `HW.App.navigate(HW.App.RouteKind.Search,'wardrobe',{query:'通勤'})`, wait: `document.querySelectorAll('.result-card').length > 0` },
-  { name: '09-wishlist', setup: `HW.App.navigate(HW.App.RouteKind.Wishlist,'profile',{})`, wait: `document.body.innerText.includes('羊毛大衣')` },
-  { name: '10-quick-capture', setup: `HW.App.switchTab('wardrobe');setTimeout(()=>HW.App.openQuickCapture(),300)`, wait: `!!document.querySelector('.sheet-backdrop')` },
-  { name: '11-store-editor', setup: `HW.App.navigate(HW.App.RouteKind.StoreEditor,'store',{})`, wait: `document.body.innerText.includes('逛店状态')` },
-  { name: '12-wearlog', setup: `HW.App.navigate(HW.App.RouteKind.WearLogEditor,'outfit',{})`, wait: `document.body.innerText.includes('选择穿搭')` }
+  { name: '07-outfit-editor-photo', setup: `HW.App.navigate(HW.App.RouteKind.OutfitEditor,'outfit',{})`, wait: `document.body.innerText.includes('上传这套穿搭照片')` },
+  { name: '08-outfit-editor-wardrobe', setup: `HW.App.navigate(HW.App.RouteKind.OutfitEditor,'outfit',{});setTimeout(()=>{const segs=document.querySelectorAll('.seg');if(segs[1])segs[1].click();},500)`, wait: `document.body.innerText.includes('选择衣柜单品')` },
+  { name: '09-store-editor', setup: `HW.App.navigate(HW.App.RouteKind.StoreEditor,'store',{})`, wait: `document.body.innerText.includes('逛店状态')` },
+  { name: '10-quick-capture', setup: `HW.App.switchTab('outfit');setTimeout(()=>HW.App.openQuickCapture(),400)`, wait: `!!document.querySelector('.sheet-backdrop')` },
+  { name: '11-search', setup: `HW.App.navigate(HW.App.RouteKind.Search,'wardrobe',{query:'通勤'})`, wait: `document.querySelectorAll('.result-card').length > 0` },
+  { name: '12-wishlist', setup: `HW.App.navigate(HW.App.RouteKind.Wishlist,'profile',{})`, wait: `document.body.innerText.includes('羊毛大衣')` }
 ];
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const server = await startServer();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'hw-shot-'));
-  const chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-sandbox', `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profile}`, '--window-size=430,900', '--force-device-scale-factor=2', 'about:blank'], { stdio: 'ignore' });
+  const chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-sandbox', `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profile}`, '--window-size=360,996', '--force-device-scale-factor=2', 'about:blank'], { stdio: 'ignore' });
 
   try {
     const targets = await waitForChrome();
     const cdp = await CDP.connect(targets.find(t => t.type === 'page').webSocketDebuggerUrl);
     await cdp.send('Runtime.enable');
     await cdp.send('Page.enable');
-    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 430, height: 900, deviceScaleFactor: 2, mobile: true });
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 360, height: 996, deviceScaleFactor: 2, mobile: true });
     await cdp.send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html` });
     await cdp.waitFor(`!!document.querySelector('.bottom-nav')`, 15000);
 

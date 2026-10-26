@@ -1,5 +1,6 @@
 /* 衣不缺 Web 版 — 添加/编辑衣物 / ClothingEditPage
-   对应鸿蒙端 entry/src/main/ets/pages/ClothingEditPage.ets。 */
+   对应鸿蒙端 entry/src/main/ets/pages/ClothingEditPage.ets。
+   滚动内容：padding {left:20, right:20, top:20, bottom:20/32}，Column space 28。 */
 (function (global) {
   'use strict';
 
@@ -32,9 +33,9 @@
     var scrollHost = el('div', { class: 'page__body scroll-y' });
     var contentHost = el('div', {
       class: 'stack',
-      style: { padding: '20px 20px 32px' }
+      style: { padding: '20px 20px 20px', gap: '28px' }
     });
-    var actionHost = el('div', { class: 'action-bar' });
+    var actionHost = el('div', { class: 'action-bar action-bar--plain' });
 
     /* ---------- 派生值 ---------- */
     function labelForCategory(category) {
@@ -77,10 +78,10 @@
 
     function purchaseInfo() {
       var info = {
-        storeName: utils_optional(state.storeName),
+        storeName: utilsOptional(state.storeName),
         price: purchasePrice(),
-        purchaseDate: utils_optional(state.purchaseDate),
-        note: utils_optional(state.purchaseNote)
+        purchaseDate: utilsOptional(state.purchaseDate),
+        note: utilsOptional(state.purchaseNote)
       };
       var hasAny =
         info.storeName !== undefined ||
@@ -90,7 +91,7 @@
       return hasAny ? info : undefined;
     }
 
-    function utils_optional(value) {
+    function utilsOptional(value) {
       var trimmed = String(value || '').trim();
       return trimmed.length > 0 ? trimmed : undefined;
     }
@@ -103,7 +104,7 @@
       );
     }
 
-    /* ---------- 照片选择 ---------- */
+    /* ---------- 照片 ---------- */
     function pickGalleryPhotos() {
       if (state.isSaving || state.isChoosingPhotos) {
         return;
@@ -111,7 +112,7 @@
       var slots = HW.utils.remainingPhotoSlots(state.photoUris);
       if (slots === 0) {
         state.errorMessage = '最多添加 ' + models.MAX_USER_PHOTOS + ' 张照片。';
-        renderError();
+        renderContent();
         return;
       }
 
@@ -130,12 +131,14 @@
           if (state.name.trim().length === 0) {
             state.name = generatedName();
           }
-          render();
+          renderContent();
+          renderAction();
         })
         .catch(function (error) {
           state.isChoosingPhotos = false;
           state.errorMessage = HW.utils.userFacingError(error, '选择照片失败');
-          render();
+          renderContent();
+          renderAction();
         });
     }
 
@@ -152,7 +155,7 @@
         name: normalizedName(),
         category: state.category,
         photoUris: state.photoUris,
-        note: utils_optional(state.note),
+        note: utilsOptional(state.note),
         purchaseInfo: purchaseInfo()
       };
 
@@ -163,72 +166,20 @@
         : ctx.repositories.clothing.createClothing(input);
 
       promise
-        .then(function (savedItem) {
+        .then(function () {
           state.isSaving = false;
           ctx.showToast('衣物已保存');
-          /* 返回列表页：App.back() 会重建列表并重新加载数据 */
           HW.App.back();
         })
         .catch(function (error) {
           state.isSaving = false;
           state.errorMessage = HW.utils.userFacingError(error, '保存衣物失败');
+          renderContent();
           renderAction();
-          renderError();
         });
     }
 
-    /* ---------- 渲染 ---------- */
-    function renderError() {
-      var existing = contentHost.querySelector('.editor-error');
-      if (existing) {
-        existing.parentNode.removeChild(existing);
-      }
-      if (!state.errorMessage) {
-        return;
-      }
-      contentHost.appendChild(
-        el('div', {
-          class: 'editor-error text-danger',
-          style: { fontSize: '13px' },
-          text: state.errorMessage
-        })
-      );
-    }
-
-    function renderAction() {
-      ui.clear(actionHost);
-
-      if (state.isSaving) {
-        actionHost.appendChild(
-          el('div', {
-            class: 'btn',
-            style: { cursor: 'default' }
-          }, [el('div', { class: 'spinner spinner--light' })])
-        );
-        return;
-      }
-
-      if (canSave()) {
-        actionHost.appendChild(
-          el('button', {
-            class: 'btn',
-            type: 'button',
-            text: '保存衣物',
-            onclick: saveClothing
-          })
-        );
-        return;
-      }
-
-      actionHost.appendChild(
-        el('div', {
-          class: 'btn',
-          style: { cursor: 'default', background: 'var(--text-disabled)', color: 'var(--text-primary)' },
-          text: state.photoUris.length > 0 ? '保存衣物' : '先选择照片'
-        })
-      );
-    }
-
+    /* ---------- 渲染：照片区（无 scrim / 无叠加标题 / 无相机按钮） ---------- */
     function renderPhotoHero() {
       var hero = el('div', {
         class: 'photo-hero photo-hero--square',
@@ -263,25 +214,32 @@
 
       hero.appendChild(
         el('div', {
-          class: 'photo-hero__content',
-          style: { pointerEvents: 'none' }
+          style: {
+            position: 'absolute',
+            left: '24px',
+            bottom: '24px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '10px',
+            height: '44px',
+            padding: '0 18px',
+            background: 'var(--card-white)',
+            borderRadius: 'var(--radius-full)',
+            boxShadow: 'var(--shadow-soft)',
+            fontSize: '15px',
+            color: 'var(--text-primary)'
+          }
         }, [
           el('span', { html: HW.icon('picture', 18) }),
-          el('span', {
-            style: { fontSize: '15px', color: 'var(--text-primary)' },
-            text: state.isChoosingPhotos ? '选择中...' : '选择照片'
-          })
+          el('span', { text: state.isChoosingPhotos ? '选择中...' : '选择照片' })
         ])
       );
 
       return hero;
     }
 
-    function renderContent() {
-      ui.clear(contentHost);
-      contentHost.appendChild(renderPhotoHero());
-
-      /* 项目详情 */
+    /* ---------- 渲染：项目详情卡 ---------- */
+    function renderNameCard() {
       var nameInput = el('input', {
         class: 'name-card__input',
         type: 'text',
@@ -293,77 +251,92 @@
         state.name = event.target.value;
       });
 
-      contentHost.appendChild(
-        el('div', { class: 'name-card' }, [
-          el('div', { class: 'name-card__label', text: '项目详情' }),
-          nameInput
-        ])
-      );
+      return el('div', { class: 'name-card' }, [
+        el('div', { class: 'name-card__label', text: '项目详情' }),
+        nameInput
+      ]);
+    }
 
-      /* 分类 */
-      var categoryRow = helpers.optionChips({
-        options: visibleCategoryOptions(),
-        getValue: function () {
-          return state.category;
-        },
-        onSelect: function (value) {
-          state.category = value;
-          renderContent();
-        }
+    /* ---------- 渲染：分类 ---------- */
+    function renderCategorySection() {
+      var row = el('div', {
+        class: 'row',
+        style: { gap: '12px', width: '100%' }
       });
 
-      contentHost.appendChild(
-        el('div', { class: 'stack', style: { gap: '14px' } }, [
-          el('div', { class: 'row row--between' }, [
-            el('div', { style: { fontSize: '16px' }, text: '分类' }),
-            el('div', {
-              class: 'text-secondary',
-              style: { fontSize: '13px' },
-              text: '已选：' + labelForCategory(state.category)
-            })
-          ]),
-          categoryRow
-        ])
-      );
+      visibleCategoryOptions().forEach(function (option) {
+        var isActive = state.category === option.value;
+        row.appendChild(
+          el(
+            'button',
+            {
+              class: 'chip-opt' + (isActive ? ' chip-opt--active' : ''),
+              type: 'button',
+              'aria-label': option.label + (isActive ? '，已选中' : ''),
+              text: option.label,
+              onclick: function () {
+                state.category = option.value;
+                renderContent();
+              }
+            },
+            []
+          )
+        );
+      });
 
-      /* 备注 */
-      var noteArea = helpers.textArea({
-        value: state.note,
+      return el('div', { class: 'stack', style: { gap: '14px' } }, [
+        el('div', { class: 'row row--between', style: { width: '100%' } }, [
+          el('div', { style: { fontSize: '16px' }, text: '分类' }),
+          el('div', {
+            style: { fontSize: '13px', color: 'var(--text-secondary)' },
+            text: '已选：' + labelForCategory(state.category)
+          })
+        ]),
+        row
+      ]);
+    }
+
+    /* ---------- 渲染：备注 ---------- */
+    function renderNoteSection() {
+      var area = el('textarea', {
+        class: 'input__textarea',
         placeholder: '输入关于这件衣服的描述...',
-        onInput: function (value) {
-          state.note = value;
-        }
+        'aria-label': '备注'
+      });
+      area.value = state.note;
+      area.addEventListener('input', function (event) {
+        state.note = event.target.value;
       });
 
-      contentHost.appendChild(
-        el('div', { class: 'stack', style: { gap: '14px' } }, [
-          el('div', { style: { fontSize: '16px' }, text: '备注' }),
-          noteArea
-        ])
-      );
+      return el('div', { class: 'stack', style: { gap: '14px' } }, [
+        el('div', { style: { fontSize: '16px' }, text: '备注' }),
+        area
+      ]);
+    }
 
-      /* 购买信息 */
-      var storeField = helpers.textField({
-        icon: 'store_fill',
-        value: state.storeName,
-        placeholder: '购买门店',
-        onInput: function (value) {
-          state.storeName = value;
-        }
-      });
+    /* ---------- 渲染：购买信息 ---------- */
+    function renderPurchaseSection() {
+      function row(options) {
+        var input = el('input', {
+          class: 'input-row__text',
+          type: 'text',
+          placeholder: options.placeholder,
+          inputmode: options.inputmode || null,
+          'aria-label': options.label
+        });
+        input.value = state[options.key];
+        input.addEventListener('input', function (event) {
+          state[options.key] = event.target.value;
+        });
 
-      var priceField = helpers.textField({
-        icon: 'creditcard',
-        value: state.price,
-        placeholder: '价格',
-        inputmode: 'decimal',
-        onInput: function (value) {
-          state.price = value;
-        }
-      });
+        return el('div', { class: 'input-row' }, [
+          el('span', { class: 'input-row__icon', html: HW.icon(options.icon, 20) }),
+          input
+        ]);
+      }
 
       var dateInput = el('input', {
-        class: 'input__text',
+        class: 'input-row__text',
         type: 'date',
         min: '2000-01-01',
         max: HW.utils.todayIsoDate(),
@@ -372,12 +345,13 @@
       dateInput.value = state.purchaseDate;
       dateInput.addEventListener('change', function (event) {
         state.purchaseDate = event.target.value;
+        renderContent();
       });
 
-      var dateRow = el('div', { class: 'input input--tall' }, [
-        el('span', { class: 'input__icon', html: HW.icon('calendar', 20) }),
-        el('div', { class: 'stack', style: { flex: '1', minWidth: '0', gap: '2px' } }, [
-          el('div', { class: 'text-secondary', style: { fontSize: '12px' }, text: '购买日期' }),
+      var dateRow = el('div', { class: 'input-row input-row--tall' }, [
+        el('span', { class: 'input-row__icon', html: HW.icon('calendar', 20) }),
+        el('div', { class: 'input-row__stack' }, [
+          el('div', { class: 'input-row__hint', text: '购买日期' }),
           dateInput
         ]),
         state.purchaseDate
@@ -388,7 +362,12 @@
                 type: 'button',
                 'aria-label': '清除日期',
                 html: HW.icon('xmark', 16),
-                style: { width: '44px', height: '44px', color: 'var(--text-secondary)' },
+                style: {
+                  width: '44px',
+                  height: '44px',
+                  flex: '0 0 auto',
+                  color: 'var(--text-secondary)'
+                },
                 onclick: function (event) {
                   event.stopPropagation();
                   state.purchaseDate = '';
@@ -397,44 +376,79 @@
               },
               []
             )
-          : el('span', { class: 'input__icon', html: HW.icon('chevron_down', 17) })
+          : el('span', {
+              class: 'input-row__icon',
+              html: HW.icon('chevron_down', 17)
+            })
       ]);
 
-      var purchaseNoteField = helpers.textField({
-        icon: 'list_bullet',
-        value: state.purchaseNote,
-        placeholder: '购买备注',
-        onInput: function (value) {
-          state.purchaseNote = value;
-        }
-      });
+      return el('div', { class: 'stack', style: { gap: '16px' } }, [
+        el('div', { class: 'stack', style: { gap: '4px' } }, [
+          el('div', { style: { fontSize: '16px' }, text: '购买信息' }),
+          el('div', {
+            style: { fontSize: '13px', color: 'var(--text-secondary)' },
+            text: '可选，方便以后回想在哪里买。'
+          })
+        ]),
+        row({ icon: 'store_fill', label: '购买门店', placeholder: '购买门店', key: 'storeName' }),
+        row({ icon: 'creditcard', label: '价格', placeholder: '价格', key: 'price', inputmode: 'decimal' }),
+        dateRow,
+        row({ icon: 'list_bullet', label: '购买备注', placeholder: '购买备注', key: 'purchaseNote' })
+      ]);
+    }
 
-      contentHost.appendChild(
-        el('div', { class: 'stack', style: { gap: '16px' } }, [
-          el('div', { class: 'stack', style: { gap: '4px' } }, [
-            el('div', { style: { fontSize: '16px' }, text: '购买信息' }),
-            el('div', {
-              class: 'text-secondary',
-              style: { fontSize: '13px' },
-              text: '可选，方便以后回想在哪里买。'
-            })
-          ]),
-          storeField.wrap,
-          priceField.wrap,
-          dateRow,
-          purchaseNoteField.wrap
-        ])
-      );
+    /* ---------- 渲染主体 ---------- */
+    function renderContent() {
+      ui.clear(contentHost);
+      contentHost.appendChild(renderPhotoHero());
+      contentHost.appendChild(renderNameCard());
+      contentHost.appendChild(renderCategorySection());
+      contentHost.appendChild(renderNoteSection());
+      contentHost.appendChild(renderPurchaseSection());
 
       if (state.errorMessage) {
         contentHost.appendChild(
           el('div', {
-            class: 'editor-error text-danger',
+            class: 'text-danger',
             style: { fontSize: '13px' },
             text: state.errorMessage
           })
         );
       }
+
+      helpers.resolvePhotos(contentHost);
+    }
+
+    function renderAction() {
+      ui.clear(actionHost);
+
+      if (state.isSaving) {
+        actionHost.appendChild(
+          el('div', { class: 'save-btn save-btn--sm' }, [
+            el('div', { class: 'spinner spinner--light' })
+          ])
+        );
+        return;
+      }
+
+      if (canSave()) {
+        actionHost.appendChild(
+          el('button', {
+            class: 'save-btn save-btn--sm',
+            type: 'button',
+            text: '保存衣物',
+            onclick: saveClothing
+          })
+        );
+        return;
+      }
+
+      actionHost.appendChild(
+        el('div', {
+          class: 'save-btn save-btn--sm save-btn--off',
+          text: state.photoUris.length > 0 ? '保存衣物' : '先选择照片'
+        })
+      );
     }
 
     function renderHeader() {
@@ -450,7 +464,7 @@
       );
     }
 
-    function render() {
+    function renderAll() {
       renderHeader();
       renderContent();
       renderAction();
@@ -480,13 +494,13 @@
             state.purchaseDate = (item.purchaseInfo && item.purchaseInfo.purchaseDate) || '';
             state.purchaseNote = (item.purchaseInfo && item.purchaseInfo.note) || '';
           }
-          render();
+          renderAll();
         })
         .catch(function () {
-          render();
+          renderAll();
         });
     } else {
-      render();
+      renderAll();
     }
 
     return { el: root, destroy: function () {} };

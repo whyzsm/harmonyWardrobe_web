@@ -166,7 +166,7 @@ async function main() {
     const wardOk = await cdp.waitFor(`document.querySelectorAll('.wall-card').length > 0`);
     const ward = await cdp.eval(`(() => ({
       cards: document.querySelectorAll('.wall-card').length,
-      chips: Array.from(document.querySelectorAll('.chip-row .chip')).map(c=>c.textContent.trim()),
+      chips: Array.from(document.querySelectorAll('.chip-tab')).map(c=>c.textContent.trim()),
       text: document.body.innerText
     }))()`);
     log('衣柜 Tab 渲染图片墙卡片', ward.cards > 0, `cards=${ward.cards}`);
@@ -199,7 +199,7 @@ async function main() {
       const inputs = Array.from(document.querySelectorAll('input'));
       const nameInput = inputs.find(i => i.getAttribute('aria-label') === '衣物名称');
       const storeInput = inputs.find(i => i.getAttribute('aria-label') === '购买门店');
-      const chips = Array.from(document.querySelectorAll('.chip')).map(c=>c.textContent.trim());
+      const chips = Array.from(document.querySelectorAll('.chip-opt')).map(c=>c.textContent.trim());
       const noteArea = document.querySelector('textarea');
       return {
         title: document.querySelector('.top-bar__title--center')?.textContent,
@@ -222,7 +222,7 @@ async function main() {
     const outfitOk = await cdp.waitFor(`document.querySelectorAll('.wall-card').length > 0`);
     const outfits = await cdp.eval(`(() => ({
       cards: document.querySelectorAll('.wall-card').length,
-      chips: Array.from(document.querySelectorAll('.chip-row .chip')).map(c=>c.textContent.trim()),
+      chips: Array.from(document.querySelectorAll('.chip-filter')).map(c=>c.textContent.trim()),
       text: document.body.innerText
     }))()`);
     log('穿搭 Tab 渲染图片墙卡片', outfits.cards > 0, `cards=${outfits.cards}`);
@@ -234,7 +234,7 @@ async function main() {
     const storeOk = await cdp.waitFor(`document.querySelectorAll('.wall-card').length > 0`);
     const store = await cdp.eval(`(() => ({
       cards: document.querySelectorAll('.wall-card').length,
-      statusChips: Array.from(document.querySelectorAll('.chip')).map(c=>c.textContent.trim()),
+      statusChips: Array.from(document.querySelectorAll('.chip-status-filter')).map(c=>c.textContent.trim()),
       text: document.body.innerText
     }))()`);
     log('逛街 Tab 渲染图片墙卡片', store.cards > 0, `cards=${store.cards}`);
@@ -268,7 +268,7 @@ async function main() {
     log('档案展示数据迁移入口', profile.text.includes('导出本地备份') && profile.text.includes('导入本地备份'));
 
     /* ---- 尺码编辑 Sheet ---- */
-    await cdp.eval(`document.querySelectorAll('.preference-row .btn--link')[0].click()`);
+    await cdp.eval(`document.querySelectorAll('.preference-row .btn--outline-pill')[0].click()`);
     const sheetOk = await cdp.waitFor(`!!document.querySelector('.sheet-backdrop')`);
     const sheetText = await cdp.eval(`document.querySelector('.sheet') ? document.querySelector('.sheet').innerText : ''`);
     log('尺码编辑弹层打开', sheetOk);
@@ -350,7 +350,7 @@ async function main() {
     const outfitEditor = await cdp.eval(`(() => ({
       text: document.body.innerText,
       hasCustom: Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='自定义分类'),
-      hasSelectedChip: Array.from(document.querySelectorAll('.chip--active')).map(c=>c.textContent.trim())
+      hasSelectedChip: Array.from(document.querySelectorAll('.cat-chip--active')).map(c=>c.textContent.trim())
     }))()`);
     log('穿搭编辑器渲染展示来源选择', outfitEditorOk);
     log('穿搭编辑器提供自定义分类入口', outfitEditor.hasCustom);

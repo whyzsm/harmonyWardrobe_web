@@ -1,5 +1,6 @@
 /* 衣不缺 Web 版 — 逛街页 / StoreVisitPage
-   对应鸿蒙端 entry/src/main/ets/pages/StoreVisitPage.ets。 */
+   对应鸿蒙端 entry/src/main/ets/pages/StoreVisitPage.ets。
+   根 Column：padding {left:20, right:20, top:8, bottom:0}，无 space，bg bgDefault。 */
 (function (global) {
   'use strict';
 
@@ -29,14 +30,19 @@
       deletingId: ''
     };
 
-    var root = el('div', { class: 'page' });
-    var headerHost = el('div');
+    var root = el('div', {
+      class: 'page',
+      style: { padding: '8px 20px 0' }
+    });
+    var controlsHost = el('div', {
+      style: { width: '100%', paddingBottom: '12px', display: 'flex', flexDirection: 'column', gap: '14px' }
+    });
     var bodyHost = el('div', { class: 'page__body page__body--column' });
     var masonry = helpers.createMasonry({ columns: 2, rowGap: 8 });
     var listHost = masonry.container;
 
-    /* ---------- 搜索与状态筛选 ---------- */
-    function buildHeader() {
+    /* ---------- 搜索头 + 状态筛选 ---------- */
+    function buildControls() {
       var searchInput = el('input', {
         class: 'search-header__input',
         type: 'text',
@@ -49,56 +55,66 @@
         renderList();
       });
 
-      var statusRow = el('div', { class: 'row', style: { gap: '6px', width: '100%' } });
+      var searchRow = el('div', { class: 'search-header' }, [
+        el(
+          'button',
+          {
+            class: 'search-header__icon-button',
+            type: 'button',
+            'aria-label': '执行搜索',
+            html: HW.icon('magnifyingglass', 18),
+            onclick: function () {
+              HW.App.navigate(HW.App.RouteKind.Search, models.AppMainTab.Store, {
+                query: state.searchQuery
+              });
+            }
+          },
+          []
+        ),
+        searchInput
+      ]);
+
+      var statusRow = el('div', {
+        class: 'row',
+        style: { gap: '6px', width: '100%', height: '44px' }
+      });
+
       STATUS_FILTERS.forEach(function (filter) {
         var isActive = state.statusFilter === filter.value;
         statusRow.appendChild(
           el(
             'button',
             {
-              class: 'chip chip--wide' + (isActive ? ' chip--active' : ''),
+              class: 'chip-status-filter' + (isActive ? ' chip-status-filter--active' : ''),
               type: 'button',
               'aria-label': filter.label + (isActive ? '，已选中' : ''),
               onclick: function () {
                 state.statusFilter = filter.value;
-                renderHeader();
+                renderControls();
                 renderList();
               }
             },
             [
-              el('span', { html: HW.icon(filter.icon, 14) }),
+              el('span', {
+                class: 'chip-status-filter__icon',
+                html: HW.icon(filter.icon, 17)
+              }),
               el('span', { text: filter.label })
             ]
           )
         );
       });
 
-      return el('div', { class: 'section-block', style: { paddingTop: '8px' } }, [
-        el('div', { class: 'search-header' }, [
-          el(
-            'button',
-            {
-              class: 'search-header__icon-button',
-              type: 'button',
-              'aria-label': '执行搜索',
-              html: HW.icon('magnifyingglass', 18),
-              onclick: function () {
-                HW.App.navigate(HW.App.RouteKind.Search, models.AppMainTab.Store, {
-                  query: state.searchQuery
-                });
-              }
-            },
-            []
-          ),
-          searchInput
-        ]),
-        el('div', { style: { height: '10px' } }),
-        statusRow
-      ]);
+      return el('div', {}, [searchRow, statusRow]);
+    }
+
+    function renderControls() {
+      ui.clear(controlsHost);
+      controlsHost.appendChild(buildControls());
     }
 
     /* ---------- 提示条 ---------- */
-    var noticeHost = el('div', { class: 'section-block' });
+    var noticeHost = el('div', { style: { width: '100%' } });
 
     function renderNotice() {
       ui.clear(noticeHost);
@@ -107,13 +123,13 @@
           state.searchQuery = '';
           state.statusFilter = 'all';
           state.savedOutsideFilterId = '';
-          renderHeader();
+          renderControls();
           renderList();
         })
       );
     }
 
-    /* ---------- 路线卡片 ---------- */
+    /* ---------- 路线卡 ---------- */
     function routeVisits() {
       var today = HW.utils.todayIsoDate();
       var todayVisits = state.visits.filter(function (visit) {
@@ -158,20 +174,17 @@
     }
 
     function renderRouteCard() {
-      var badgeText = isSearching()
-        ? String(filteredVisits().length)
-        : String(state.visits.length);
-
-      return el('div', { class: 'section-block', style: { marginBottom: '16px' } }, [
-        el('div', { class: 'guide-card' }, [
-          el('div', { class: 'guide-card__text' }, [
+      var count = isSearching() ? filteredVisits().length : state.visits.length;
+      return el('div', { style: { width: '100%' } }, [
+        el('div', { class: 'route-card' }, [
+          el('div', { class: 'route-card__text' }, [
             el('div', {
-              class: 'guide-card__title',
+              class: 'route-card__title',
               text: (hasTodayRoute() ? '今天路线' : '最近路线') + '：' + routeLocation()
             }),
-            el('div', { class: 'guide-card__desc', text: routeSummaryText() })
+            el('div', { class: 'route-card__desc', text: routeSummaryText() })
           ]),
-          el('div', { class: 'guide-card__badge', text: badgeText })
+          el('div', { class: 'route-card__badge', text: String(count) })
         ])
       ]);
     }
@@ -212,6 +225,7 @@
       });
     }
 
+    /* cardAspectRatio(index)：0.704 / 0.833 / 0.98 */
     function cardAspectRatio(index) {
       if (index % 4 === 0) {
         return 0.704;
@@ -280,9 +294,11 @@
 
         var aspectRatio = cardAspectRatio(index);
         var card = helpers.wallCard({
+          layout: 'store',
           aspectRatio: aspectRatio,
           photoId: visit.photoUris && visit.photoUris.length ? visit.photoUris[0] : '',
           placeholderIcon: 'store_fill',
+          placeholderIconSize: 34,
           statusText: helpers.visitBadge(visit),
           title: visit.storeNameSnapshot,
           meta: meta,
@@ -360,61 +376,12 @@
             state.deleteOverlayId = '';
             state.deletingId = '';
             renderList();
-            ctx.showToast(
-              HW.utils.userFacingError(error, '删除逛店记录失败'),
-              true
-            );
+            ctx.showToast(HW.utils.userFacingError(error, '删除逛店记录失败'), true);
           });
       });
     }
 
-    /* ---------- 渲染 ---------- */
-    function renderHeader() {
-      ui.clear(headerHost);
-      headerHost.appendChild(buildHeader());
-    }
-
-    function renderBody() {
-      ui.clear(bodyHost);
-
-      if (state.loading) {
-        bodyHost.appendChild(
-          ui.loadingBlock('正在加载逛店记录...', '逛店记录正在从本地衣柜读取。')
-        );
-        return;
-      }
-
-      if (state.errorMessage) {
-        bodyHost.appendChild(
-          el('div', { class: 'stack stack--md', style: { padding: '20px' } }, [
-            el('div', { style: { fontSize: '14px' }, text: '逛店记录暂时没有加载成功' }),
-            el('div', {
-              class: 'text-danger',
-              style: { fontSize: '12px' },
-              text: state.errorMessage
-            }),
-            el('button', {
-              class: 'btn btn--sm',
-              type: 'button',
-              text: '重试',
-              onclick: load
-            })
-          ])
-        );
-        return;
-      }
-
-      bodyHost.appendChild(noticeHost);
-      renderNotice();
-
-      if (state.visits.length > 0) {
-        bodyHost.appendChild(renderRouteCard());
-      }
-
-      bodyHost.appendChild(listHost);
-      renderList();
-    }
-
+    /* ---------- 加载 ---------- */
     function load() {
       state.loading = true;
       state.errorMessage = '';
@@ -434,10 +401,84 @@
         });
     }
 
-    root.appendChild(headerHost);
+    /* ---------- 渲染 ---------- */
+    function renderBody() {
+      ui.clear(bodyHost);
+
+      if (state.loading) {
+        bodyHost.appendChild(
+          el('div', {
+            class: 'stack',
+            style: {
+              width: '100%',
+              padding: '18px',
+              gap: '8px',
+              alignItems: 'flex-start',
+              background: 'var(--card-soft-gray)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-xxl)'
+            }
+          }, [
+            el('div', { class: 'spinner' }),
+            el('div', { style: { fontSize: '14px' }, text: '正在加载逛店记录...' }),
+            el('div', {
+              style: { fontSize: '12px', color: 'var(--text-secondary)' },
+              text: '逛店记录正在从本地衣柜读取。'
+            })
+          ])
+        );
+        return;
+      }
+
+      if (state.errorMessage) {
+        bodyHost.appendChild(
+          el('div', {
+            class: 'row',
+            style: {
+              width: '100%',
+              padding: '18px',
+              gap: '12px',
+              alignItems: 'center',
+              background: 'var(--card-soft-gray)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-xxl)'
+            }
+          }, [
+            el('div', { class: 'grow', style: { display: 'flex', flexDirection: 'column', gap: '4px' } }, [
+              el('div', { style: { fontSize: '14px' }, text: '逛店记录暂时没有加载成功' }),
+              el('div', {
+                class: 'text-danger',
+                style: { fontSize: '12px' },
+                text: state.errorMessage
+              })
+            ]),
+            el('button', {
+              class: 'btn btn--sm',
+              type: 'button',
+              style: { width: 'auto', height: '44px', padding: '0 14px', fontSize: '13px', flex: '0 0 auto' },
+              text: '重试',
+              onclick: load
+            })
+          ])
+        );
+        return;
+      }
+
+      bodyHost.appendChild(noticeHost);
+      renderNotice();
+
+      if (state.visits.length > 0) {
+        bodyHost.appendChild(renderRouteCard());
+      }
+
+      bodyHost.appendChild(listHost);
+      renderList();
+    }
+
+    root.appendChild(controlsHost);
     root.appendChild(bodyHost);
 
-    renderHeader();
+    renderControls();
     renderBody();
     load();
 

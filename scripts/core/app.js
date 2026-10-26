@@ -331,13 +331,14 @@
           {
             class: 'bottom-nav__item' + (isActive ? ' bottom-nav__item--active' : ''),
             type: 'button',
-            'aria-label': label,
+            'aria-label': label + (isActive ? '，已选中' : ''),
+            'aria-current': isActive ? 'page' : null,
             onclick: function () {
               App.switchTab(tab);
             }
           },
           [
-            el('span', { html: icon(iconName, 22) }),
+            el('span', { class: 'bottom-nav__icon', html: icon(iconName, 20) }),
             el('span', { class: 'bottom-nav__label', text: label })
           ]
         );
@@ -349,37 +350,56 @@
         el(
           'button',
           {
-            class: 'bottom-nav__fab',
+            class: 'bottom-nav__fab-slot',
             type: 'button',
             'aria-label': '快捷录入',
-            html: icon('camera_fill', 22),
             onclick: function () {
               App.openQuickCapture();
             }
           },
-          []
+          [
+            el('span', { class: 'bottom-nav__fab', html: icon('camera_fill', 20) })
+          ]
         ),
         navItem(models.AppMainTab.Store, '逛街', 'store_fill'),
         navItem(models.AppMainTab.Profile, '我的', 'person')
       ]);
 
-      App.navHost.appendChild(nav);
+      App.navHost.appendChild(
+        el('div', { class: 'bottom-nav-host' }, [nav])
+      );
     },
 
     /* ---------- 快捷录入弹层 ---------- */
     openQuickCapture: function () {
+      var activeTab = App.current().mainTab;
+      var models = HW.models;
+
+      /**
+       * 深色卡片跟随当前 Tab：
+       *   穿搭 Tab → 穿搭 深色；逛街 Tab → 逛街 深色；其余 → 衣柜 深色
+       */
+      function isPrimary(target) {
+        if (activeTab === models.AppMainTab.Store || activeTab === models.AppMainTab.Outfit) {
+          return activeTab === target;
+        }
+        return target === models.AppMainTab.Wardrobe;
+      }
+
       var sheet = ui.showSheet({
         title: '快捷录入',
+        flat: true,
         render: function (close) {
           var wrap = el('div', { class: 'stack stack--md' });
 
           function actionCard(options) {
+            var primary = isPrimary(options.target);
             return el(
               'button',
               {
-                class: 'quick-action' + (options.primary ? ' quick-action--primary' : ''),
+                class: 'quick-action' + (primary ? ' quick-action--primary' : ''),
                 type: 'button',
-                'aria-label': options.title,
+                'aria-label': options.title + '，' + options.description,
                 onclick: function () {
                   close();
                   options.onClick();
@@ -388,7 +408,7 @@
               [
                 el('span', {
                   class: 'quick-action__icon',
-                  html: icon(options.icon, 20)
+                  html: icon(options.icon, 22)
                 }),
                 el('span', { class: 'quick-action__text' }, [
                   el('span', { class: 'quick-action__title', text: options.title }),
@@ -403,7 +423,7 @@
               title: '穿搭',
               description: '新增穿搭',
               icon: 'hanger_and_towels',
-              primary: true,
+              target: models.AppMainTab.Outfit,
               onClick: function () {
                 App.openQuickOutfitEditor();
               }
@@ -414,6 +434,7 @@
               title: '逛店',
               description: '新增逛店记录',
               icon: 'store_fill',
+              target: models.AppMainTab.Store,
               onClick: function () {
                 App.openQuickStoreEditor();
               }
@@ -424,6 +445,7 @@
               title: '衣柜',
               description: '新增衣物',
               icon: 'shirt',
+              target: models.AppMainTab.Wardrobe,
               onClick: function () {
                 App.openQuickClothingEditor();
               }
