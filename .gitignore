@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# 测试截图输出（由 node tests/screenshots.js 重新生成）
+.screenshots/
+
+# AI 工具与本地数据
+.workbuddy/
+.codex/
+.claude/
+.agents/
+
+# 备份文件
+*.backup

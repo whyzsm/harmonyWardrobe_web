@@ -1,0 +1,128 @@
+/* 衣不缺 Web 版 — 设计令牌 / Design Tokens
+   源自鸿蒙端 entry/src/main/ets/theme/Tokens.ets（易布雀 Yibuque 设计规范）
+   数值与 ArkTS 端保持 1:1 对应，单位 px（ArkTS 为 vp）。
+
+   注意：ArkTS 的 8 位十六进制是 ARGB（#AARRGGBB），
+   CSS 的 8 位十六进制是 RGBA（#RRGGBBAA），通道顺序不同，
+   因此下列带透明度的颜色均已按 CSS 语义做了通道重排。 */
+
+:root {
+  /* ---- 颜色 / Colors (YibuqueColor) ---- */
+  --bg-default: #ffffff;
+  --bg-gray: #f5f5f7;
+  --bg-base: #ffffff;
+  --bg-header: #f5f5f7;
+  --card-white: #ffffff;
+  --card-surface: #f2f2f7;
+  --card-muted: #f5f5f7;
+  --card-soft-gray: #fbfbfd;
+  --card-dark: #1c1c1e;
+  --icon-dark-surface: #3a3a3c;
+  --bottom-navigation-surface: #2d2c2ce6;
+  --search-header-surface: #fbf9f9f2;
+
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --text-quaternary: #626267;
+  --text-disabled: #b8b8bd;
+  --text-inverse: #ffffff;
+  --action-black: #1d1d1f;
+
+  --icon-accent: #0071e3;
+  --icon-accent-surface: #eaf3fe;
+  --profile-hero-surface: #e2eefc;
+  --selection-accent: #0071e3;
+  --selection-accent-surface: #eaf3fe;
+
+  --success: #16a34a;
+  --success-bg: #ecfdf3;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+
+  --border-light: #e8e8ed;
+  --border-medium: #d2d2d7;
+  --border-strong: #1d1d1f;
+
+  --overlay-dark: #1d1d1f7a;
+  --scrim-light: #00000029;
+  --scrim-medium: #00000052;
+  --scrim-strong: #00000099;
+  --glass-light: #ffffff38;
+  --glass-medium: #ffffffd9;
+  --glass-strong: #fffffff2;
+  --glass-badge: #ffffffe6;
+  --transparent: #ffffff00;
+  --transparent-black: #00000000;
+
+  /* ---- 字号 / Font size ---- */
+  --font-display: 36px;
+  --font-page-title: 24px;
+  --font-section: 22px;
+  --font-card-title: 21px;
+  --font-body: 16px;
+  --font-meta: 14px;
+  --font-caption: 12px;
+
+  /* ---- 行高 / Line height ---- */
+  --line-display: 44px;
+  --line-page-title: 32px;
+  --line-section: 30px;
+  --line-card-title: 29px;
+  --line-body: 24px;
+  --line-meta: 20px;
+  --line-caption: 18px;
+
+  /* ---- 间距 / Spacing ---- */
+  --space-xxs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-xxl: 24px;
+  --space-section: 28px;
+  --space-page-x: 20px;
+  --space-card-x: 24px;
+  --space-bottom-safe: 24px;
+  --space-nav-clearance: 96px;
+
+  /* ---- 圆角 / Radius ---- */
+  --radius-micro: 4px;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-xxl: 18px;
+  --radius-xxxl: 20px;
+  --radius-sheet: 28px;
+  --radius-full: 999px;
+
+  /* ---- 阴影 / Shadow ----
+     ArkTS ShadowOptions.color 同样是 ARGB，此处已转为 CSS rgba */
+  --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.08);
+  --shadow-soft: 0 5px 16px rgba(0, 0, 0, 0.09);
+  --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-app-top-bar: 0 4px 12px rgba(0, 0, 0, 0.09);
+  --shadow-bottom-navigation: 0 6px 16px rgba(0, 0, 0, 0.2);
+  --shadow-camera-glow: 0 0 18px rgba(0, 0, 0, 0.15);
+  --shadow-editor-sheet: 0 -6px 24px rgba(0, 0, 0, 0.07);
+  --shadow-badge: 0 3px 8px rgba(0, 0, 0, 0.09);
+  --shadow-sheet-handle: 0 -8px 28px rgba(0, 0, 0, 0.16);
+
+  /* ---- 动效 / Motion ---- */
+  --motion-page: 350ms;
+  --motion-sheet: 300ms;
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-fast-out-slow-in: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- 布局 / Layout ---- */
+  --app-max-width: 480px;
+  --top-bar-height: 60px;
+  --bottom-nav-height: 56px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 主题：跟随系统深色偏好时，页面底色保持浅色（与鸿蒙端固定浅色一致），
+   仅对极少数容器使用深色底，避免破坏设计规范。 */

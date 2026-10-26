@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta name="description" content="衣不缺 — 本地优先的衣橱管理网页版">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>衣不缺 · 衣橱管理</title>
+
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="icon" href="assets/default_fashion_cover.jpg">
+</head>
+<body>
+  <div id="app">
+    <!-- 启动态：脚本加载完成后被替换 -->
+    <div class="app-canvas">
+      <div class="page">
+        <div class="loading-block" style="padding-top: 120px;">
+          <div style="font-size: 28px; color: var(--text-primary);">衣不缺</div>
+          <div style="font-size: 14px; color: var(--text-secondary);">正在初始化本地衣柜...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding: 24px; font-family: sans-serif;">
+      衣不缺需要启用 JavaScript 才能运行。
+    </div>
+  </noscript>
+
+  <!-- 核心层 / Core -->
+  <script src="scripts/core/utils.js"></script>
+  <script src="scripts/core/icons.js"></script>
+  <script src="scripts/core/models.js"></script>
+  <script src="scripts/core/db.js"></script>
+  <script src="scripts/core/photoStore.js"></script>
+
+  <!-- 数据层 / Data layer -->
+  <script src="scripts/data/clothingRepo.js"></script>
+  <script src="scripts/data/outfitRepo.js"></script>
+  <script src="scripts/data/storeRepo.js"></script>
+  <script src="scripts/data/miscRepo.js"></script>
+  <script src="scripts/data/backupService.js"></script>
+
+  <!-- UI 层 / UI layer -->
+  <script src="scripts/core/ui.js"></script>
+  <script src="scripts/pages/shared.js"></script>
+
+  <!-- 页面 / Pages -->
+  <script src="scripts/pages/wardrobe.js"></script>
+  <script src="scripts/pages/clothingDetail.js"></script>
+  <script src="scripts/pages/clothingEditor.js"></script>
+  <script src="scripts/pages/outfits.js"></script>
+  <script src="scripts/pages/outfitDetail.js"></script>
+  <script src="scripts/pages/outfitEditor.js"></script>
+  <script src="scripts/pages/storeVisit.js"></script>
+  <script src="scripts/pages/storeVisitDetail.js"></script>
+  <script src="scripts/pages/storeVisitEditor.js"></script>
+  <script src="scripts/pages/profile.js"></script>
+  <script src="scripts/pages/searchResults.js"></script>
+  <script src="scripts/pages/wearLogEditor.js"></script>
+  <script src="scripts/pages/wishlist.js"></script>
+  <script src="scripts/pages/captureEditor.js"></script>
+
+  <!-- 应用入口 / App entry -->
+  <script src="scripts/core/app.js"></script>
+  <script src="scripts/main.js"></script>
+</body>
+</html>
